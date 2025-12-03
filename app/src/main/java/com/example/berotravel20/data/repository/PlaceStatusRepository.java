@@ -1,38 +1,40 @@
 package com.example.berotravel20.data.repository;
 
-import android.content.Context;
+import com.example.berotravel20.data.api.PlaceStatusApiService;
+import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.model.PlaceStatus.PlaceStatus;
+import com.example.berotravel20.data.model.Place.PlaceStatusRequest;
+import com.example.berotravel20.data.remote.RetrofitClient;
 
-import com.example.berotravel20.data.api.PlaceStatusService;
-import com.example.berotravel20.data.api.RetrofitClient;
-import com.example.berotravel20.data.local.SessionManager;
-import com.example.berotravel20.data.models.PlaceStatus.PlaceStatus;
-import com.example.berotravel20.data.models.PlaceStatus.PlaceStatusRequest;
-import com.example.berotravel20.data.models.PlaceStatus.PlaceStatusResponse;
+public class PlaceStatusRepository extends BaseRepository {
+    private PlaceStatusApiService api;
 
-import retrofit2.Call;
-
-public class PlaceStatusRepository {
-
-    private final PlaceStatusService service;
-
-    public PlaceStatusRepository(Context context) {
-        SessionManager sessionManager = new SessionManager(context);
-        service = RetrofitClient.getClient(sessionManager).create(PlaceStatusService.class);
+    public PlaceStatusRepository() {
+        this.api = RetrofitClient.getInstance().getPlaceStatusApi();
     }
 
-    public Call<PlaceStatus> getStatusByPlaceId(String placeId) {
-        return service.getStatusByPlaceId(placeId);
+    // 1. Tạo mới Status
+    public void createPlaceStatus(PlaceStatusRequest request, DataCallback<PlaceStatus> callback) {
+        makeCall(api.createPlaceStatus(request), callback);
     }
 
-    public Call<PlaceStatusResponse> createPlaceStatus(PlaceStatusRequest request) {
-        return service.createPlaceStatus(request);
+    // 2. Lấy Status theo Place ID (Thường dùng nhất)
+    public void getStatusByPlaceId(String placeId, DataCallback<PlaceStatus> callback) {
+        makeCall(api.getStatusByPlaceId(placeId), callback);
     }
 
-    public Call<PlaceStatusResponse> updatePlaceStatus(String id, PlaceStatusRequest request) {
-        return service.updatePlaceStatus(id, request);
+    // 3. Cập nhật Status theo Place ID
+    public void updateStatusByPlaceId(String placeId, PlaceStatusRequest request, DataCallback<PlaceStatus> callback) {
+        makeCall(api.updateStatusByPlaceId(placeId, request), callback);
     }
 
-    public Call<Void> deletePlaceStatus(String id) {
-        return service.deletePlaceStatus(id);
+    // 4. Xóa Status theo Place ID
+    public void deleteStatusByPlaceId(String placeId, DataCallback<Void> callback) {
+        makeCall(api.deleteStatusByPlaceId(placeId), callback);
+    }
+
+    // 5. Cập nhật Status theo ID riêng của Status (Ít dùng hơn, nhưng có trong API)
+    public void updateStatusById(String statusId, PlaceStatusRequest request, DataCallback<PlaceStatus> callback) {
+        makeCall(api.updateStatusById(statusId, request), callback);
     }
 }

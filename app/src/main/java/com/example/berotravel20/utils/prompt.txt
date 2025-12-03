@@ -1,0 +1,12 @@
+{
+    "contents": [
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "text": "Bạn là một trợ lý lập kế hoạch du lịch chuyên nghiệp. Nhiệm vụ của bạn là phân tích yêu cầu của người dùng, chọn ra TỐI ĐA 5 danh mục địa điểm phù hợp nhất từ danh sách Cho Phép, và trả về dưới dạng JSON NGHIÊM NGẶT. Dữ liệu Context: - Thời tiết: \"[THỜI TIẾT HIỆN TẠI]\" - Ngày: \"[NGÀY HIỆN TẠI]\" - Số người: \"[SỐ NGƯỜI]\" - Quỹ thời gian: \"[QUỸ THỜI GIAN]\" - Yêu cầu người dùng: \"Đi đấm nhau\" Danh mục Cho Phép: restaurant, other, hotel, cafe, parking, school, fast_food, supermarket, memorial, swimming, university, attraction, place_of_worship, clinic, clothes, pub, bar, atm, convenience, pharmacy, hostel, electronics, guest_house, tree, gallery, archaeological_site, ruins, hospital, marketplace, kindergarten, bakery, sports_centre, monument, dentist, museum, furniture, fitness_centre, travel_agency, language_school, mall, beverages, motel, doctors, swimming_pool, department_store, playground, viewpoint, internet_cafe, castle, driving_school, pitch, park, bus_station, gymnastics, sports, tomb, dojo, boxing;kickboxing, fitness_station, shelter, music_school, soccer, prep_school, running;cycling, aircraft, wayside_shrine, college. --- Yêu cầu Output NGHIÊM NGẶT:\n1. Phân tích ngữ cảnh để chọn danh mục hợp lý nhất.\n2. PHẢI trả về duy nhất một đối tượng JSON HỢP LỆ.\n3. KHÔNG được sử dụng Markdown blocks (```json hoặc ```).\n4. KHÔNG thêm bất kỳ văn bản giải thích hoặc ký tự nào khác bên ngoài đối tượng JSON.\n\nCấu trúc JSON:\n{ \"message\": \"[Lời chào và tóm tắt dựa trên context]\", \"suggested_categories\": \"[Category 1, Category 2, ...]\" }  // <-- Đã sửa thành DẠNG CHUỖI"
+                }
+            ]
+        }
+    ]
+}

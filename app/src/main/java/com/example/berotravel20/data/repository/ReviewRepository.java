@@ -1,52 +1,28 @@
 package com.example.berotravel20.data.repository;
 
-import android.content.Context;
-
-import com.example.berotravel20.data.api.ReviewService;
-import com.example.berotravel20.data.api.RetrofitClient;
-import com.example.berotravel20.data.local.SessionManager;
-import com.example.berotravel20.data.models.Review.RatingResponse;
-import com.example.berotravel20.data.models.Review.Review;
-import com.example.berotravel20.data.models.Review.ReviewRequest;
+import com.example.berotravel20.data.api.ReviewApiService;
+import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.model.Review.Review;
+import com.example.berotravel20.data.remote.RetrofitClient;
 
 import java.util.List;
 
-import retrofit2.Call;
+public class ReviewRepository extends BaseRepository {
+    private ReviewApiService api = RetrofitClient.getInstance().getReviewApi();
 
-public class ReviewRepository {
-
-    private final ReviewService service;
-
-    public ReviewRepository(Context context) {
-        SessionManager sessionManager = new SessionManager(context);
-        service = RetrofitClient.getClient(sessionManager).create(ReviewService.class);
+    public void getReviewsByPlace(String placeId, DataCallback<List<Review>> callback) {
+        makeCall(api.getReviewsByPlace(placeId), callback);
     }
 
-    public Call<Integer> getReviewCount() {
-        return service.getReviewCount();
+    public void createReview(String placeId, int rating, String comment, DataCallback<Void> callback) {
+        makeCall(api.createReview(placeId, new Review.Request(rating, comment)), callback);
     }
 
-    public Call<List<Review>> getTopReviews() {
-        return service.getTopReviews();
+    public void getTopReviews(DataCallback<List<Review>> callback) {
+        makeCall(api.getTopReviews(), callback);
     }
 
-    public Call<List<Review>> getReviewsByPlace(String placeId) {
-        return service.getReviewsByPlace(placeId);
-    }
-
-    public Call<Review> createReview(String placeId, ReviewRequest request) {
-        return service.createReview(placeId, request);
-    }
-
-    public Call<RatingResponse> getPlaceRating(String placeId) {
-        return service.getPlaceRating(placeId);
-    }
-
-    public Call<Review> updateReview(String reviewId, ReviewRequest request) {
-        return service.updateReview(reviewId, request);
-    }
-
-    public Call<Void> deleteReview(String reviewId) {
-        return service.deleteReview(reviewId);
+    public void deleteReview(String id, DataCallback<Void> callback) {
+        makeCall(api.deleteReview(id), callback);
     }
 }

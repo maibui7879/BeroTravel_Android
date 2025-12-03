@@ -1,62 +1,59 @@
 package com.example.berotravel20.data.repository;
 
-import com.example.berotravel20.data.api.PlaceService;
-import com.example.berotravel20.data.api.RetrofitClient;
-import com.example.berotravel20.data.local.SessionManager;
-import com.example.berotravel20.data.models.Place.Place;
-import com.example.berotravel20.data.models.Place.PlaceRequest;
-import com.example.berotravel20.data.models.Place.PlaceResponse;
+import com.example.berotravel20.data.api.PlaceApiService;
+import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.model.Place.Place;
+import com.example.berotravel20.data.model.Place.PlaceCountResponse;
+import com.example.berotravel20.data.model.Place.PlaceImagesRequest;
+import com.example.berotravel20.data.remote.RetrofitClient;
 
 import java.util.List;
-import java.util.Map;
 
-import retrofit2.Call;
+public class PlaceRepository extends BaseRepository {
+    private PlaceApiService api;
 
-public class PlaceRepository {
-
-    private final PlaceService service;
-
-    public PlaceRepository(SessionManager sessionManager) {
-        service = RetrofitClient.getClient(sessionManager).create(PlaceService.class);
+    public PlaceRepository() {
+        this.api = RetrofitClient.getInstance().getPlaceApi();
     }
 
-    // Lấy tổng số địa điểm
-    public Call<Map<String, Integer>> getPlaceCount() {
-        return service.getPlaceCount();
+    // 1. Lấy tổng số lượng
+    public void getPlacesCount(DataCallback<PlaceCountResponse> callback) {
+        makeCall(api.getPlacesCount(), callback);
     }
 
-    // Lấy tất cả địa điểm
-    public Call<List<Place>> getAllPlaces() {
-        return service.getAllPlaces();
+    // 2. Lấy tất cả địa điểm
+    public void getAllPlaces(DataCallback<List<Place>> callback) {
+        makeCall(api.getAllPlaces(), callback);
     }
 
-    // Lấy địa điểm theo ID
-    public Call<Place> getPlaceById(String placeId) {
-        return service.getPlaceById(placeId);
+    // 3. Tạo mới
+    public void createPlace(Place.Request request, DataCallback<Place> callback) {
+        makeCall(api.createPlace(request), callback);
     }
 
-    // Tìm địa điểm gần vị trí hiện tại
-    public Call<List<Place>> getNearbyPlaces(double latitude, double longitude, double radius) {
-        return service.getNearbyPlaces(latitude, longitude, radius);
+    // 4. Lấy chi tiết
+    public void getPlaceById(String id, DataCallback<Place> callback) {
+        makeCall(api.getPlace(id), callback);
     }
 
-    // Tạo địa điểm mới
-    public Call<PlaceResponse> createPlace(PlaceRequest request) {
-        return service.createPlace(request);
+    // 5. Cập nhật thông tin
+    public void updatePlace(String id, Place.Request request, DataCallback<Place> callback) {
+        makeCall(api.updatePlace(id, request), callback);
     }
 
-    // Cập nhật địa điểm theo ID
-    public Call<PlaceResponse> updatePlace(String placeId, PlaceRequest request) {
-        return service.updatePlace(placeId, request);
+    // 6. Xóa địa điểm
+    public void deletePlace(String id, DataCallback<Void> callback) {
+        makeCall(api.deletePlace(id), callback);
     }
 
-    // Xóa địa điểm theo ID
-    public Call<Void> deletePlace(String placeId) {
-        return service.deletePlace(placeId);
+    // 7. Cập nhật ảnh (Chính & Phụ)
+    public void updatePlaceImages(String id, String mainImageUrl, List<String> imgSet, DataCallback<Void> callback) {
+        PlaceImagesRequest request = new PlaceImagesRequest(mainImageUrl, imgSet);
+        makeCall(api.updatePlaceImages(id, request), callback);
     }
 
-    // Cập nhật ảnh chính và ảnh phụ cho địa điểm
-    public Call<PlaceResponse> updatePlaceImages(String placeId, Map<String, Object> images) {
-        return service.updatePlaceImages(placeId, images);
+    // 8. Tìm kiếm nearby
+    public void searchNearby(double lat, double lng, Integer radius, String keyword, String category, DataCallback<List<Place>> callback) {
+        makeCall(api.searchNearby(lat, lng, radius, keyword, category), callback);
     }
 }
