@@ -17,7 +17,7 @@ public class AuthActivity extends AppCompatActivity {
         // Mặc định load LoginFragment khi mở màn hình này
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.auth_container, new com.berotravel20.ui.auth.LoginFragment())
+                    .replace(R.id.auth_container, new com.example.berotravel20.ui.auth.LoginFragment())
                     .commit();
         }
     }
