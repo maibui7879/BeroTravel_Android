@@ -5,4 +5,5 @@
     <color name="colorPrimaryBackground">#007A8C</color>
     <color name="colorPrimaryText">#336749</color>
     <color name="colorGeneralText">#6C757D</color>
+    <color name="teal_700">#018786</color>
 </resources>
