@@ -135,7 +135,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
 
             @Override
-            public void onFailure(String message) {
+            public void onError(String message) {
                 Toast.makeText(MapActivity.this, "Lỗi tải map: " + message, Toast.LENGTH_SHORT).show();
             }
         });
@@ -160,7 +160,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
 
             @Override
-            public void onFailure(String message) {
+            public void onError(String message) {
                 Toast.makeText(MapActivity.this, "Lỗi tìm kiếm: " + message, Toast.LENGTH_SHORT).show();
             }
         });
