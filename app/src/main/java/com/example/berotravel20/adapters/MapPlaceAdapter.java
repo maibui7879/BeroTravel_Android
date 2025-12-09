@@ -1,7 +1,7 @@
 package com.example.berotravel20.adapters;
 
-
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +21,7 @@ import java.util.List;
 public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceViewHolder> {
 
     private Context context;
-    private List<Place> placeList;
+    private List<Place> placeList = new ArrayList<>();
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -31,11 +31,13 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     public MapPlaceAdapter(Context context, OnItemClickListener listener) {
         this.context = context;
         this.listener = listener;
-        this.placeList = new ArrayList<>();
     }
 
     public void setData(List<Place> list) {
-        this.placeList = list;
+        this.placeList.clear();
+        if (list != null) {
+            this.placeList.addAll(list);
+        }
         notifyDataSetChanged();
     }
 
@@ -50,43 +52,69 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     public void onBindViewHolder(@NonNull PlaceViewHolder holder, int position) {
         Place place = placeList.get(position);
 
-        // 1. Bind thông tin cơ bản
-        holder.tvName.setText(place.name);
-        holder.tvAddress.setText(place.address);
+        // 1. Tên & Địa chỉ
+        if (holder.tvName != null) holder.tvName.setText(place.name);
+        if (holder.tvAddress != null) holder.tvAddress.setText(place.address);
 
-        // 2. Bind ảnh dùng Glide
-        if (place.imageUrl != null) {
-            Glide.with(context).load(place.imageUrl).into(holder.imgPlace);
+        // 2. Ảnh
+        if (holder.imgPlace != null) {
+            if (place.imageUrl != null && !place.imageUrl.isEmpty()) {
+                Glide.with(context)
+                        .load(place.imageUrl)
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.placeholder_image)
+                        .centerCrop()
+                        .into(holder.imgPlace);
+            } else {
+                holder.imgPlace.setImageResource(R.drawable.placeholder_image);
+            }
         }
 
-        // 3. LOGIC PlaceStatus (Quan trọng)
+        // 3. LOGIC HIỂN THỊ THÔNG TIN CHI TIẾT
+        StringBuilder statusBuilder = new StringBuilder();
+
+        // A. Trạng thái (Mở/Đóng)
         if (place.status != null) {
-            // Hiển thị trạng thái (Open/Closed) hoặc Giá
-            String statusText = "";
             if ("open".equalsIgnoreCase(place.status.initialStatus)) {
-                statusText = "Đang mở cửa • ";
+                statusBuilder.append("Đang mở");
             } else {
-                statusText = "Đóng cửa • ";
+                statusBuilder.append("Đóng cửa");
             }
 
-            // Hiển thị giá (nếu > 0)
+            // B. Giá
             if (place.status.price > 0) {
-                statusText += String.format("$%.0f", place.status.price);
+                statusBuilder.append(" • VND").append(String.format("%.0f", place.status.price));
             } else {
-                statusText += "Miễn phí";
+                statusBuilder.append(" • Miễn phí");
             }
-
-            // Tạm thời gán vào chỗ rating hoặc tạo textview mới
-            holder.tvStatusInfo.setText(statusText);
+        } else {
+            statusBuilder.append("Thông tin");
         }
 
-        // Sự kiện click vào item -> Di chuyển map tới đó
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(place));
+        // C. KHOẢNG CÁCH (Đây là phần bạn cần)
+        // Log kiểm tra xem dữ liệu có vào không
+        if (place.distance != null) {
+            Log.d("ADAPTER", "Item: " + place.name + " - Dist: " + place.distance);
+
+            // Format: " • Cách 1.2 km"
+            statusBuilder.append(" • Cách ")
+                    .append(String.format("%.1f", place.distance))
+                    .append(" km");
+        }
+
+        // Gán text
+        if (holder.tvStatusInfo != null) {
+            holder.tvStatusInfo.setText(statusBuilder.toString());
+        }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onItemClick(place);
+        });
     }
 
     @Override
     public int getItemCount() {
-        return placeList != null ? placeList.size() : 0;
+        return placeList.size();
     }
 
     public static class PlaceViewHolder extends RecyclerView.ViewHolder {
@@ -98,8 +126,7 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             imgPlace = itemView.findViewById(R.id.imgPlace);
             tvName = itemView.findViewById(R.id.tvPlaceName);
             tvAddress = itemView.findViewById(R.id.tvAddress);
-            // Tận dụng TextView rating trong layout cũ để hiển thị status
-            tvStatusInfo = itemView.findViewById(R.id.layoutRating).findViewById(R.id.tvPlaceName); // Sửa ID trong layout xml nếu cần chuẩn hơn
+            tvStatusInfo = itemView.findViewById(R.id.tvStatusInfo);
         }
     }
 }

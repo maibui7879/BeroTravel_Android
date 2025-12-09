@@ -28,6 +28,9 @@ public class Place {
     @SerializedName("updated_by")
     public String updatedBy;
 
+    @SerializedName("distance")
+    public Double distance;
+    
     public String updatedAt;
 
     // Object status được lồng bên trong

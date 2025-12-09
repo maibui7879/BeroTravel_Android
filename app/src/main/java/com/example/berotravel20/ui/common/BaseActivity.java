@@ -1,10 +1,11 @@
 package com.example.berotravel20.ui.common;
 
+import android.content.Intent; // Nhớ import Intent
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -12,11 +13,9 @@ import androidx.fragment.app.Fragment;
 import com.example.berotravel20.R;
 import com.example.berotravel20.ui.main.ai.AIFragment;
 import com.example.berotravel20.ui.main.home.HomeFragment;
-import com.example.berotravel20.ui.main.map.MapFragment;
+import com.example.berotravel20.ui.map.MapActivity; // Import đúng MapActivity
 import com.example.berotravel20.ui.main.profile.AccountFragment;
 import com.example.berotravel20.ui.main.setting.SettingFragment;
-import com.google.android.gms.maps.SupportMapFragment;
-
 
 public class BaseActivity extends AppCompatActivity {
 
@@ -32,7 +31,7 @@ public class BaseActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
 
-        // Load fragment mặc định
+        // Load fragment mặc định là Home
         setSelected(navHome);
         replaceFragment(new HomeFragment());
     }
@@ -64,10 +63,16 @@ public class BaseActivity extends AppCompatActivity {
             replaceFragment(new HomeFragment());
         });
 
+        // --- SỬA ĐỔI Ở ĐÂY ---
         navMap.setOnClickListener(v -> {
-            setSelected(navMap);
-            replaceFragment(new MapFragment());
+            // Không gọi setSelected(navMap) vì ta sẽ rời khỏi màn hình này
+            // Không gọi replaceFragment
+
+            // Chuyển sang MapActivity riêng biệt
+            Intent intent = new Intent(BaseActivity.this, MapActivity.class);
+            startActivity(intent);
         });
+        // ---------------------
 
         navAI.setOnClickListener(v -> {
             setSelected(navAI);
@@ -87,30 +92,30 @@ public class BaseActivity extends AppCompatActivity {
 
     /** Đổi màu icon & text khi chọn tab */
     private void setSelected(View selected) {
-
-        // reset tất cả
+        // reset tất cả về màu mặc định
         resetTab(iconHome, textHome);
         resetTab(iconMap, textMap);
         resetTab(iconAI, textAI);
         resetTab(iconSetting, textSetting);
         resetTab(iconAccount, textAccount);
 
-        // set màu được chọn
+        // set màu active cho tab được chọn
         if (selected == navHome) setActive(iconHome, textHome);
-        if (selected == navMap) setActive(iconMap, textMap);
+        // if (selected == navMap) setActive(iconMap, textMap); // Map là Activity riêng nên ko cần set active ở đây
         if (selected == navAI) setActive(iconAI, textAI);
         if (selected == navSetting) setActive(iconSetting, textSetting);
         if (selected == navAccount) setActive(iconAccount, textAccount);
     }
 
     private void resetTab(ImageView icon, TextView label) {
+        // Đảm bảo bạn có định nghĩa màu trong colors.xml hoặc dùng Color.GRAY/Color.BLACK
         icon.setColorFilter(getColor(R.color.nav_default));
         label.setTextColor(getColor(R.color.nav_default));
     }
 
     private void setActive(ImageView icon, TextView label) {
-        icon.setColorFilter(getColor(R.color.teal_700)); // đổi màu icon khi chọn
-        label.setTextColor(getColor(R.color.teal_700));  // đổi màu text khi chọn
+        icon.setColorFilter(getColor(R.color.teal_700));
+        label.setTextColor(getColor(R.color.teal_700));
     }
 
     private void replaceFragment(Fragment fragment) {
