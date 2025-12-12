@@ -1,33 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/base_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:context=".ui.common.BaseActivity">
+    android:background="#FFFFFF">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <!-- Nội dung chính -->
+    <FrameLayout
+        android:id="@+id/base_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navbar" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+    <!-- Navbar -->
+    <LinearLayout
+        android:id="@+id/bottom_navbar"
+        android:layout_width="430dp"
+        android:layout_height="82dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/navbar_bg"
+        android:elevation="10dp">
 
-    </com.google.android.material.appbar.AppBarLayout>
+        <!-- Mẫu nút -->
+        <!-- mỗi item là LinearLayout (vertical) có ripple + đổi màu icon -->
 
-    <include layout="@layout/content_base" />
+        <!-- HOME -->
+        <LinearLayout
+            android:id="@+id/nav_home"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="16dp"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
+            <ImageView
+                android:id="@+id/icon_home"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/home_icon"
+                app:tint="@color/nav_default" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <TextView
+                android:id="@+id/text_home"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Home"
+                android:textSize="12sp"
+                android:textColor="@color/nav_default"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+        <!-- MAP -->
+        <LinearLayout
+            android:id="@+id/nav_map"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <ImageView
+                android:id="@+id/icon_map"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/map_icon"
+                app:tint="@color/nav_default" />
+
+            <TextView
+                android:id="@+id/text_map"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Map"
+                android:textSize="12sp"
+                android:textColor="@color/nav_default"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+        <!-- AI -->
+        <LinearLayout
+            android:id="@+id/nav_ai"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <ImageView
+                android:id="@+id/icon_ai"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ai_icon"
+                app:tint="@color/nav_default" />
+
+            <TextView
+                android:id="@+id/text_ai"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AI"
+                android:textSize="12sp"
+                android:textColor="@color/nav_default"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+        <!-- SETTING -->
+        <LinearLayout
+            android:id="@+id/nav_setting"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <ImageView
+                android:id="@+id/icon_setting"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/set_icon"
+                app:tint="@color/nav_default" />
+
+            <TextView
+                android:id="@+id/text_setting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Setting"
+                android:textSize="12sp"
+                android:textColor="@color/nav_default"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+        <!-- ACCOUNT -->
+        <LinearLayout
+            android:id="@+id/nav_account"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <ImageView
+                android:id="@+id/icon_account"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/account_icon"
+                app:tint="@color/nav_default" />
+
+            <TextView
+                android:id="@+id/text_account"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Account"
+                android:textSize="12sp"
+                android:textColor="@color/nav_default"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>
