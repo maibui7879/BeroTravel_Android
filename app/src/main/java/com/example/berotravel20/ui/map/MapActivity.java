@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,8 +26,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.berotravel20.R;
+import com.example.berotravel20.adapters.DirectionStepAdapter;
 import com.example.berotravel20.adapters.MapPlaceAdapter;
 import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.model.ORS.Step;
 import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.data.repository.RouteRepository;
@@ -37,6 +40,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButtonToggleGroup; // IMPORT QUAN TRỌNG
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -44,7 +48,7 @@ import java.util.List;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    // Helper & Repository
+    // Helper & Repo
     private MapHelper mapHelper;
     private LocationHelper locationHelper;
     private PlaceRepository placeRepository;
@@ -52,11 +56,28 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     // UI Components
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
-    private MapPlaceAdapter adapter;
     private EditText etSearch;
-    private TextView tvResultCount;
     private ProgressBar pbLoading;
     private ChipGroup chipGroupFilter;
+    private RelativeLayout groupMainUI;
+
+    // UI Search Result
+    private LinearLayout layoutSearchResults;
+    private TextView tvResultCount;
+    private MapPlaceAdapter placeAdapter;
+
+    // UI Preview Direction
+    private LinearLayout layoutDirections;
+    private DirectionStepAdapter stepAdapter;
+    private TextView tvDuration, tvDistance;
+
+    // [FIX] Dùng ToggleGroup, XÓA các biến ImageView lẻ tẻ
+    private MaterialButtonToggleGroup toggleTransportMode;
+
+    // UI Navigation Active
+    private RelativeLayout layoutNavigationActive;
+    private TextView navInstruction, navDistance;
+    private ImageView navIcon;
 
     // State
     private Location currentUserLocation;
@@ -64,6 +85,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private String currentCategory = null;
     private int currentRadius = 5;
     private int tempSelectedRadius = 5;
+
+    // Direction State
+    private Place currentDestination;
+    private String currentTransportProfile = "driving-car";
+    private boolean isNavigating = false;
+    private List<Step> currentRouteSteps;
 
     private final int[] RADIUS_OPTIONS = {1, 2, 5, 10, 15, 20, 30, 50};
     private final String[] POPULAR_FILTERS = {"restaurant", "cafe", "hotel", "atm", "gas_station", "hospital"};
@@ -73,8 +100,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        // Init Helpers & Repos
-        mapHelper = new MapHelper();
+        mapHelper = new MapHelper(this);
         locationHelper = new LocationHelper(this);
         placeRepository = new PlaceRepository();
         routeRepository = new RouteRepository();
@@ -82,212 +108,209 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         initViews();
         setupFilterChips();
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(this);
-        }
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        if (mapFragment != null) mapFragment.getMapAsync(this);
     }
 
     private void initViews() {
+        // --- 1. MAIN UI ---
+        groupMainUI = findViewById(R.id.groupMainUI);
+
         etSearch = findViewById(R.id.etSearchMap);
         etSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
-                handleSearchAction();
+                performSearch();
                 return true;
             }
             return false;
         });
+        findViewById(R.id.btnSearchIcon).setOnClickListener(v -> performSearch());
 
-        findViewById(R.id.btnSearchIcon).setOnClickListener(v -> handleSearchAction());
         chipGroupFilter = findViewById(R.id.chipGroupFilter);
 
         findViewById(R.id.btnMyLocation).setOnClickListener(v -> {
-            if (currentUserLocation != null) mapHelper.moveCamera(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), 15f);
+            if (currentUserLocation != null && mapHelper != null)
+                mapHelper.moveCamera(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), 15f);
             else checkAndGetLocation();
         });
 
+        // --- 2. BOTTOM SHEET ---
         LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
-        if (bottomSheet != null) {
-            bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
-            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-        }
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setFitToContents(false);
+        bottomSheetBehavior.setHalfExpandedRatio(0.5f);
+        bottomSheetBehavior.setPeekHeight(dpToPx(240));
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
-        tvResultCount = findViewById(R.id.tvResultCount);
+        // [QUAN TRỌNG] Cho phép ẩn bottom sheet khi vào Navigation Mode
+        bottomSheetBehavior.setHideable(true);
+
+        layoutSearchResults = findViewById(R.id.layout_search_results);
+        layoutDirections = findViewById(R.id.layout_directions);
         pbLoading = findViewById(R.id.pbLoading);
+
+        // --- 3. RESULT LIST ---
+        tvResultCount = findViewById(R.id.tvResultCount);
         RecyclerView rvResults = findViewById(R.id.rvMapResults);
         rvResults.setLayoutManager(new LinearLayoutManager(this));
 
-        // Init Adapter
-        adapter = new MapPlaceAdapter(this, new MapPlaceAdapter.OnItemClickListener() {
+        placeAdapter = new MapPlaceAdapter(this, new MapPlaceAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Place place) {
                 mapHelper.moveCamera(new LatLng(place.latitude, place.longitude), 16f);
-                if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
-
             @Override
-            public void onDirectionClick(Place place) {
-                fetchAndDrawRoute(place);
+            public void onDirectionClick(Place place) { enterPreviewDirectionMode(place); }
+        });
+        rvResults.setAdapter(placeAdapter);
+
+        // --- 4. PREVIEW DIRECTION UI ---
+        tvDuration = findViewById(R.id.tvDuration);
+        tvDistance = findViewById(R.id.tvDistance);
+
+        // [FIX] Ánh xạ ToggleGroup thay vì tìm từng nút con
+        toggleTransportMode = findViewById(R.id.toggleTransportMode);
+
+        toggleTransportMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                if (checkedId == R.id.btnModeCar) selectTransportMode("driving-car");
+                else if (checkedId == R.id.btnModeBike) selectTransportMode("cycling-regular");
+                else if (checkedId == R.id.btnModeWalk) selectTransportMode("foot-walking");
             }
         });
-        rvResults.setAdapter(adapter);
+
+        findViewById(R.id.btnExitDirection).setOnClickListener(v -> exitPreviewDirectionMode());
+        findViewById(R.id.btnStartNavigation).setOnClickListener(v -> startNavigation());
+
+        RecyclerView rvSteps = findViewById(R.id.rvDirectionSteps);
+        rvSteps.setLayoutManager(new LinearLayoutManager(this));
+        stepAdapter = new DirectionStepAdapter();
+        rvSteps.setAdapter(stepAdapter);
+
+        // --- 5. ACTIVE NAVIGATION UI ---
+        layoutNavigationActive = findViewById(R.id.layoutNavigationActive);
+        navInstruction = findViewById(R.id.navStepInstruction);
+        navDistance = findViewById(R.id.navStepDistance);
+        navIcon = findViewById(R.id.navStepIcon);
+
+        findViewById(R.id.btnStopNavigation).setOnClickListener(v -> stopNavigation());
     }
 
-    private void handleSearchAction() {
-        performSearch();
-        hideKeyboard();
+    // --- LOGIC LOGIC ---
+    private void selectTransportMode(String mode) {
+        if (mode.equals(currentTransportProfile)) return;
+        currentTransportProfile = mode;
+        // Không cần update UI thủ công vì ToggleGroup tự lo
+        if (currentDestination != null) fetchRoute(currentDestination);
     }
 
-    // --- FILTERS UI ---
-    private void setupFilterChips() {
-        chipGroupFilter.removeAllViews();
-        addRadiusChip();
-        for (String key : POPULAR_FILTERS) {
-            addCategoryChip(key, CategoryUtils.getLabel(key));
+    private void enterPreviewDirectionMode(Place place) {
+        this.currentDestination = place;
+        layoutSearchResults.setVisibility(View.GONE);
+        layoutDirections.setVisibility(View.VISIBLE);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+
+        // Reset về Car
+        currentTransportProfile = "driving-car";
+        toggleTransportMode.check(R.id.btnModeCar);
+
+        fetchRoute(place);
+    }
+
+    private void exitPreviewDirectionMode() {
+        mapHelper.clearPolyline();
+        layoutDirections.setVisibility(View.GONE);
+        layoutSearchResults.setVisibility(View.VISIBLE);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+
+        this.currentDestination = null;
+        if(currentUserLocation!=null) mapHelper.moveCamera(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), 15f);
+    }
+
+    private void startNavigation() {
+        if (currentUserLocation == null) {
+            Toast.makeText(this, "Đang lấy vị trí...", Toast.LENGTH_SHORT).show();
+            return;
         }
-        Chip moreChip = new Chip(this);
-        moreChip.setText("Thêm...");
-        // Style cho nút "Thêm..." (Luôn ở trạng thái chưa chọn)
-        setChipStyle(moreChip, false);
-        moreChip.setOnClickListener(v -> showFullFilterBottomSheet());
-        chipGroupFilter.addView(moreChip);
-    }
+        isNavigating = true;
 
-    private void addRadiusChip() {
-        Chip radiusChip = new Chip(this);
-        radiusChip.setText("Trong " + currentRadius + " km");
-        radiusChip.setChipIconResource(R.drawable.ic_search_gray);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        groupMainUI.setVisibility(View.GONE);
+        layoutNavigationActive.setVisibility(View.VISIBLE);
 
-        // [CẬP NHẬT] Sử dụng hàm setChipStyle để áp dụng màu
-        setChipStyle(radiusChip, false); // Mặc định là style chưa chọn
+        mapHelper.disableMyLocationLayer();
+        mapHelper.updateNavigationCamera(currentUserLocation);
 
-        radiusChip.setOnClickListener(v -> showRadiusSelectionDialog(radiusChip));
-        chipGroupFilter.addView(radiusChip);
-    }
-
-    private void showRadiusSelectionDialog(Chip chipToUpdate) {
-        BottomSheetDialog dialog = new BottomSheetDialog(this);
-        View view = LayoutInflater.from(this).inflate(R.layout.layout_radius_bottom_sheet, null);
-        ChipGroup cgRadius = view.findViewById(R.id.cgRadiusPresets);
-        Button btnApply = view.findViewById(R.id.btnApplyRadius);
-
-        // [CẬP NHẬT] Màu cho nút Áp dụng
-        btnApply.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
-        btnApply.setTextColor(ContextCompat.getColor(this, R.color.white));
-
-        tempSelectedRadius = currentRadius;
-
-        for (int km : RADIUS_OPTIONS) {
-            Chip choiceChip = new Chip(this);
-            choiceChip.setText(km + " km");
-            choiceChip.setCheckable(true);
-            choiceChip.setClickable(true);
-
-            // [CẬP NHẬT] Set style dựa trên việc nó có đang được chọn hay không
-            boolean isSelected = (km == currentRadius);
-            setChipStyle(choiceChip, isSelected);
-            if (isSelected) choiceChip.setChecked(true);
-
-            choiceChip.setOnCheckedChangeListener((v, isChecked) -> {
-                if (isChecked) {
-                    tempSelectedRadius = km;
-                    setChipStyle(choiceChip, true);
-                } else {
-                    setChipStyle(choiceChip, false);
+        locationHelper.startLocationUpdates(location -> {
+            currentUserLocation = location;
+            if (isNavigating) {
+                mapHelper.updateNavigationCamera(location);
+                // Demo Update Step
+                if (currentRouteSteps != null && !currentRouteSteps.isEmpty()) {
+                    Step s = currentRouteSteps.get(0);
+                    navInstruction.setText(s.instruction);
+                    navDistance.setText((int)s.distance + " m");
                 }
-            });
-            cgRadius.addView(choiceChip);
-        }
-        btnApply.setOnClickListener(v -> {
-            currentRadius = tempSelectedRadius;
-            chipToUpdate.setText("Trong " + currentRadius + " km");
-            // Có thể muốn set style active cho chip Radius bên ngoài sau khi chọn
-            // setChipStyle(chipToUpdate, true);
-            dialog.dismiss();
-        });
-        dialog.setContentView(view);
-        dialog.show();
-    }
-
-    private void addCategoryChip(String key, String label) {
-        Chip chip = new Chip(this);
-        chip.setText(label);
-        chip.setCheckable(true);
-
-        // [CẬP NHẬT] Set style ban đầu
-        setChipStyle(chip, key.equals(currentCategory));
-
-        chip.setOnCheckedChangeListener((v, isChecked) -> {
-            // [CẬP NHẬT] Đổi style khi check/uncheck
-            setChipStyle(chip, isChecked);
-            if (isChecked) currentCategory = key;
-            else if (key.equals(currentCategory)) currentCategory = null;
-        });
-        chipGroupFilter.addView(chip);
-    }
-
-    // [THÊM MỚI] Hàm quản lý màu sắc trung tâm cho Chip
-    private void setChipStyle(Chip chip, boolean isSelected) {
-        if (isSelected) {
-            // Đang chọn: Nền màu chủ đạo, Chữ trắng, Không viền, Icon trắng
-            chip.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
-            chip.setTextColor(ContextCompat.getColor(this, R.color.white));
-            chip.setChipStrokeWidth(0f);
-            if (chip.getChipIcon() != null) {
-                chip.setChipIconTint(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white)));
             }
-        } else {
-            // Không chọn: Nền trắng, Chữ màu General, Viền xám nhạt, Icon màu General
-            chip.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white)));
-            chip.setTextColor(ContextCompat.getColor(this, R.color.colorPrimaryText));
-            chip.setChipStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.light_gray_stroke)));
-            chip.setChipStrokeWidth(1f); // Lưu ý: 1f ở đây là pixel, chuẩn hơn nên dùng dp convert sang px
-            if (chip.getChipIcon() != null) {
-                chip.setChipIconTint(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryText)));
-            }
+        });
+
+        if (currentRouteSteps != null && !currentRouteSteps.isEmpty()) {
+            Step s = currentRouteSteps.get(0);
+            navInstruction.setText(s.instruction);
+            navDistance.setText((int)s.distance + " m");
         }
     }
 
-    private void showFullFilterBottomSheet() {
-        BottomSheetDialog dialog = new BottomSheetDialog(this);
-        View view = LayoutInflater.from(this).inflate(R.layout.layout_filter_bottom_sheet, null);
-        ChipGroup fullListGroup = view.findViewById(R.id.chipGroupFullList);
-        for (java.util.Map.Entry<String, String> entry : CategoryUtils.CATEGORY_MAP.entrySet()) {
-            Chip chip = new Chip(this);
-            chip.setText(entry.getValue());
-            chip.setCheckable(true);
+    private void stopNavigation() {
+        isNavigating = false;
+        locationHelper.stopLocationUpdates();
 
-            // [CẬP NHẬT] Set style
-            boolean isSelected = entry.getKey().equals(currentCategory);
-            if (isSelected) chip.setChecked(true);
-            setChipStyle(chip, isSelected);
+        layoutNavigationActive.setVisibility(View.GONE);
+        groupMainUI.setVisibility(View.VISIBLE);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
 
-            chip.setOnClickListener(v -> {
-                currentCategory = entry.getKey();
-                setupFilterChips(); // Refresh UI
-                dialog.dismiss();
-            });
-            fullListGroup.addView(chip);
-        }
-        dialog.setContentView(view);
-        dialog.show();
+        mapHelper.stopNavigationMode();
+        mapHelper.enableMyLocationLayer();
     }
 
-    // --- MAP & DATA LOGIC ---
+    // ... (Giữ nguyên các phần fetchRoute, onMapReady, checkAndGetLocation, search, filter...)
+
+    // Copy lại phần fetchRoute, performSearch, v.v... từ code cũ nếu cần, hoặc giữ nguyên
+    // Vì phần này không gây lỗi ClassCastException.
+
+    // --- API ROUTE ---
+    private void fetchRoute(Place destination) {
+        if (currentUserLocation == null) {
+            checkAndGetLocation();
+            return;
+        }
+        tvDuration.setText("...");
+        tvDistance.setText("");
+
+        routeRepository.getRoute(currentTransportProfile, currentUserLocation.getLatitude(), currentUserLocation.getLongitude(), destination.latitude, destination.longitude,
+                new RouteRepository.RouteCallback() {
+                    @Override
+                    public void onSuccess(List<LatLng> path, List<Step> steps, double dist, double dur) {
+                        mapHelper.drawPolyline(path);
+                        currentRouteSteps = steps;
+
+                        if (dist < 1000) tvDistance.setText(String.format("(%d m)", (int)dist));
+                        else tvDistance.setText(String.format("(%.1f km)", dist/1000));
+
+                        int min = (int)(dur/60);
+                        tvDuration.setText(min + " phút");
+                        if(stepAdapter != null) stepAdapter.setData(steps);
+                    }
+                    @Override public void onError(String msg) { tvDuration.setText("Lỗi"); }
+                });
+    }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mapHelper.setGoogleMap(googleMap);
-
-        googleMap.setOnMarkerClickListener(marker -> {
-            Place place = mapHelper.getPlaceByMarkerId(marker.getId());
-            if (place != null) marker.showInfoWindow();
-            return false;
-        });
-
-        googleMap.setOnMapClickListener(latLng -> {
-            if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        googleMap.setOnMapClickListener(l -> {
+            if(!isNavigating) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             hideKeyboard();
         });
 
@@ -298,115 +321,123 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void checkAndGetLocation() {
         locationHelper.getLastLocation(location -> {
             currentUserLocation = location;
-            mapHelper.moveCamera(new LatLng(location.getLatitude(), location.getLongitude()), 15f);
-            // Note: Việc bật myLocationEnabled cần được xử lý cẩn thận khi tách code.
-            // Nếu LocationHelper đã check quyền, ta có thể báo cho MapHelper bật nó lên.
+            // Chỉ move camera nếu chưa chọn điểm đến (tránh giật khi đang xem đường)
+            if (currentDestination == null) {
+                mapHelper.moveCamera(new LatLng(location.getLatitude(), location.getLongitude()), 15f);
+            }
+            if(locationHelper.hasPermission()) mapHelper.enableMyLocationLayer();
         });
     }
-
-    // --- API CALLS ---
 
     private void loadAllPlaces() {
         showLoading();
         mapHelper.clearPolyline();
         placeRepository.getAllPlaces(new DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> data) {
-                hideLoading();
-                updateUI(data);
-            }
+            @Override public void onSuccess(List<Place> data) { hideLoading(); updateSearchResults(data); }
             @Override public void onError(String message) { hideLoading(); }
         });
     }
 
     private void performSearch() {
-        if (currentUserLocation == null) {
-            Toast.makeText(this, "Đang lấy vị trí...", Toast.LENGTH_SHORT).show();
-            checkAndGetLocation();
-            return;
-        }
-
+        if (currentUserLocation == null) { checkAndGetLocation(); return; }
         if (etSearch != null) currentKeyword = etSearch.getText().toString().trim();
-
-        // Vẽ vòng tròn (Màu sắc được xử lý bên trong MapHelper)
-        mapHelper.drawSearchRadius(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), currentRadius);
+        if (currentDestination == null) mapHelper.drawSearchRadius(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), currentRadius);
 
         showLoading();
-        placeRepository.searchNearby(
-                currentUserLocation.getLatitude(),
-                currentUserLocation.getLongitude(),
-                currentRadius,
-                currentKeyword.isEmpty() ? "" : currentKeyword,
-                currentCategory,
+        placeRepository.searchNearby(currentUserLocation.getLatitude(), currentUserLocation.getLongitude(), currentRadius, currentKeyword.isEmpty()?"":currentKeyword, currentCategory,
                 new DataCallback<List<Place>>() {
-                    @Override
-                    public void onSuccess(List<Place> data) {
-                        hideLoading();
-                        updateUI(data);
-                        if (data != null && !data.isEmpty()) {
-                            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                        } else {
-                            Toast.makeText(MapActivity.this, "Không tìm thấy kết quả", Toast.LENGTH_SHORT).show();
-                        }
+                    @Override public void onSuccess(List<Place> data) {
+                        hideLoading(); updateSearchResults(data);
+                        if(data!=null && !data.isEmpty() && currentDestination==null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                     }
                     @Override public void onError(String message) { hideLoading(); }
-                }
-        );
+                });
     }
 
-    private void fetchAndDrawRoute(Place destination) {
-        if (currentUserLocation == null) {
-            checkAndGetLocation();
-            Toast.makeText(this, "Đang lấy vị trí...", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Toast.makeText(this, "Đang tìm đường...", Toast.LENGTH_SHORT).show();
-
-        routeRepository.getRoute(
-                currentUserLocation.getLatitude(), currentUserLocation.getLongitude(),
-                destination.latitude, destination.longitude,
-                new RouteRepository.RouteCallback() {
-                    @Override
-                    public void onSuccess(List<LatLng> path) {
-                        // Vẽ đường (Màu sắc được xử lý bên trong MapHelper)
-                        mapHelper.drawPolyline(path);
-                        if (bottomSheetBehavior != null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                    }
-
-                    @Override
-                    public void onError(String message) {
-                        Toast.makeText(MapActivity.this, message, Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-    }
-
-    private void updateUI(List<Place> places) {
+    private void updateSearchResults(List<Place> places) {
         runOnUiThread(() -> {
-            if (places == null) return;
-            if (adapter != null) adapter.setData(places);
-            if (tvResultCount != null) tvResultCount.setText("Kết quả (" + places.size() + ")");
+            if(placeAdapter!=null) placeAdapter.setData(places);
+            if(tvResultCount!=null) tvResultCount.setText("Kết quả (" + (places!=null?places.size():0) + ")");
             mapHelper.showMarkers(places);
         });
     }
 
-    // --- UTILS ---
-    private void showLoading() { if (pbLoading != null) pbLoading.setVisibility(View.VISIBLE); }
-    private void hideLoading() { if (pbLoading != null) pbLoading.setVisibility(View.GONE); }
+    private void setupFilterChips() {
+        chipGroupFilter.removeAllViews();
+        addRadiusChip();
+        for (String key : POPULAR_FILTERS) addCategoryChip(key, CategoryUtils.getLabel(key));
+        Chip more = new Chip(this); more.setText("Thêm..."); setChipStyle(more, false);
+        more.setOnClickListener(v -> showFullFilterBottomSheet());
+        chipGroupFilter.addView(more);
+    }
 
-    private void hideKeyboard() {
-        View view = this.getCurrentFocus();
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    private void addRadiusChip() {
+        Chip c = new Chip(this); c.setText("Trong "+currentRadius+" km"); c.setChipIconResource(R.drawable.ic_search_gray);
+        setChipStyle(c, false); c.setOnClickListener(v->showRadiusSelectionDialog(c));
+        chipGroupFilter.addView(c);
+    }
+
+    private void addCategoryChip(String key, String label) {
+        Chip c = new Chip(this); c.setText(label); c.setCheckable(true);
+        setChipStyle(c, key.equals(currentCategory));
+        c.setOnCheckedChangeListener((v,b)->{ setChipStyle(c,b); if(b) currentCategory=key; else if(key.equals(currentCategory)) currentCategory=null; });
+        chipGroupFilter.addView(c);
+    }
+
+    private void showRadiusSelectionDialog(Chip updateChip) {
+        BottomSheetDialog d = new BottomSheetDialog(this);
+        View v = LayoutInflater.from(this).inflate(R.layout.layout_radius_bottom_sheet, null);
+        ChipGroup g = v.findViewById(R.id.cgRadiusPresets);
+        Button btn = v.findViewById(R.id.btnApplyRadius);
+        btn.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
+        btn.setTextColor(ContextCompat.getColor(this, R.color.white));
+        tempSelectedRadius = currentRadius;
+        for(int km : RADIUS_OPTIONS) {
+            Chip c = new Chip(this); c.setText(km+" km"); c.setCheckable(true); c.setClickable(true);
+            boolean sel = (km==currentRadius); setChipStyle(c, sel); if(sel) c.setChecked(true);
+            c.setOnCheckedChangeListener((view,b)->{ if(b) { tempSelectedRadius=km; setChipStyle(c,true); } else setChipStyle(c,false); });
+            g.addView(c);
+        }
+        btn.setOnClickListener(view -> { currentRadius=tempSelectedRadius; updateChip.setText("Trong "+currentRadius+" km"); d.dismiss(); });
+        d.setContentView(v); d.show();
+    }
+
+    private void setChipStyle(Chip c, boolean sel) {
+        if(sel) {
+            c.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
+            c.setTextColor(ContextCompat.getColor(this, R.color.white)); c.setChipStrokeWidth(0f);
+            if(c.getChipIcon()!=null) c.setChipIconTint(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white)));
+        } else {
+            c.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white)));
+            c.setTextColor(ContextCompat.getColor(this, R.color.colorGeneralText)); c.setChipStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.light_gray_stroke))); c.setChipStrokeWidth(1f);
+            if(c.getChipIcon()!=null) c.setChipIconTint(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorGeneralText)));
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LocationHelper.LOCATION_PERMISSION_REQUEST_CODE && grantResults.length > 0) {
-            checkAndGetLocation();
+    private void showFullFilterBottomSheet() {
+        BottomSheetDialog d = new BottomSheetDialog(this);
+        View v = LayoutInflater.from(this).inflate(R.layout.layout_filter_bottom_sheet, null);
+        ChipGroup g = v.findViewById(R.id.chipGroupFullList);
+        for(java.util.Map.Entry<String,String> e : CategoryUtils.CATEGORY_MAP.entrySet()) {
+            Chip c = new Chip(this); c.setText(e.getValue()); c.setCheckable(true);
+            boolean sel = e.getKey().equals(currentCategory); if(sel) c.setChecked(true); setChipStyle(c, sel);
+            c.setOnClickListener(view->{ currentCategory=e.getKey(); setupFilterChips(); d.dismiss(); });
+            g.addView(c);
         }
+        d.setContentView(v); d.show();
+    }
+
+    private int dpToPx(int dp) { return Math.round(dp * getResources().getDisplayMetrics().density); }
+    private void showLoading() { if(pbLoading!=null) pbLoading.setVisibility(View.VISIBLE); }
+    private void hideLoading() { if(pbLoading!=null) pbLoading.setVisibility(View.GONE); }
+    private void hideKeyboard() {
+        View v = getCurrentFocus();
+        if(v!=null) ((InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int r, @NonNull String[] p, @NonNull int[] g) {
+        super.onRequestPermissionsResult(r, p, g);
+        if(r==LocationHelper.LOCATION_PERMISSION_REQUEST_CODE && g.length>0) checkAndGetLocation();
     }
 }
