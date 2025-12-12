@@ -88,7 +88,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Place currentDestination;
     private String currentTransportProfile = "driving-car";
     private boolean isNavigating = false;
+
+    // Smart Navigation Logic
     private List<Step> currentRouteSteps;
+    private List<LatLng> mFullRoutePath;
+    private int currentStepIndex = 0;
 
     private final int[] RADIUS_OPTIONS = {1, 2, 5, 10, 15, 20, 30, 50};
     private final String[] POPULAR_FILTERS = {"restaurant", "cafe", "hotel", "atm", "gas_station", "hospital"};
@@ -111,7 +115,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     private void initViews() {
-        // --- 1. MAIN UI ---
         groupMainUI = findViewById(R.id.groupMainUI);
 
         etSearch = findViewById(R.id.etSearchMap);
@@ -132,10 +135,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             else checkAndGetLocation();
         });
 
-        // --- 2. BOTTOM SHEET ---
         LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
-        bottomSheetBehavior.setHideable(true); // Cho phép ẩn khi dẫn đường
+        bottomSheetBehavior.setHideable(true);
         bottomSheetBehavior.setFitToContents(false);
         bottomSheetBehavior.setHalfExpandedRatio(0.5f);
         bottomSheetBehavior.setPeekHeight(dpToPx(240));
@@ -145,7 +147,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         layoutDirections = findViewById(R.id.layout_directions);
         pbLoading = findViewById(R.id.pbLoading);
 
-        // --- 3. RESULT LIST ---
         tvResultCount = findViewById(R.id.tvResultCount);
         RecyclerView rvResults = findViewById(R.id.rvMapResults);
         rvResults.setLayoutManager(new LinearLayoutManager(this));
@@ -161,7 +162,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
         rvResults.setAdapter(placeAdapter);
 
-        // --- 4. PREVIEW DIRECTION UI ---
         tvDuration = findViewById(R.id.tvDuration);
         tvDistance = findViewById(R.id.tvDistance);
 
@@ -182,7 +182,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         stepAdapter = new DirectionStepAdapter();
         rvSteps.setAdapter(stepAdapter);
 
-        // --- 5. ACTIVE NAVIGATION UI ---
         layoutNavigationActive = findViewById(R.id.layoutNavigationActive);
         navInstruction = findViewById(R.id.navStepInstruction);
         navDistance = findViewById(R.id.navStepDistance);
@@ -191,7 +190,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         findViewById(R.id.btnStopNavigation).setOnClickListener(v -> stopNavigation());
     }
 
-    // --- LOGIC LOGIC ---
+    // --- LOGIC HELPER: CLEAN STRING (FIX LỖI RẼ RẼ PHẢI) ---
+    private String cleanInstruction(String raw) {
+        if (raw == null || raw.isEmpty()) return "";
+        String s = raw.trim();
+        // Xóa từ lặp
+        s = s.replaceAll("(?i)rẽ\\s+rẽ", "Rẽ");
+        s = s.replaceAll("(?i)đi\\s+đi", "Đi");
+        s = s.replaceAll("(?i)quay\\s+đầu\\s+quay\\s+đầu", "Quay đầu");
+        // Viết hoa chữ cái đầu
+        if (!s.isEmpty()) {
+            s = s.substring(0, 1).toUpperCase() + s.substring(1);
+        }
+        return s;
+    }
+
+    // --- TRANSPORT & PREVIEW ---
     private void selectTransportMode(String mode) {
         if (mode.equals(currentTransportProfile)) return;
         currentTransportProfile = mode;
@@ -204,7 +218,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         layoutDirections.setVisibility(View.VISIBLE);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
 
-        // Reset về Car
         currentTransportProfile = "driving-car";
         toggleTransportMode.check(R.id.btnModeCar);
 
@@ -221,12 +234,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if(currentUserLocation!=null) mapHelper.moveCamera(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), 15f);
     }
 
+    // --- NAVIGATION LOGIC ---
+
     private void startNavigation() {
         if (currentUserLocation == null) {
             Toast.makeText(this, "Đang lấy vị trí...", Toast.LENGTH_SHORT).show();
             return;
         }
         isNavigating = true;
+        currentStepIndex = 0;
 
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         groupMainUI.setVisibility(View.GONE);
@@ -239,18 +255,60 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             currentUserLocation = location;
             if (isNavigating) {
                 mapHelper.updateNavigationCamera(location);
-                if (currentRouteSteps != null && !currentRouteSteps.isEmpty()) {
-                    Step s = currentRouteSteps.get(0);
-                    navInstruction.setText(s.instruction);
-                    navDistance.setText((int)s.distance + " m");
-                }
+                updateNavigationProgress(location);
             }
         });
 
+        // Hiển thị bước đầu tiên (đã clean string)
         if (currentRouteSteps != null && !currentRouteSteps.isEmpty()) {
-            Step s = currentRouteSteps.get(0);
-            navInstruction.setText(s.instruction);
-            navDistance.setText((int)s.distance + " m");
+            updateNavigationProgress(currentUserLocation);
+        }
+    }
+
+    private void updateNavigationProgress(Location userLocation) {
+        if (currentRouteSteps == null || mFullRoutePath == null || currentStepIndex >= currentRouteSteps.size()) {
+            if (currentStepIndex >= currentRouteSteps.size()) {
+                navInstruction.setText("Bạn đã đến đích!");
+                navDistance.setText("0 m");
+            }
+            return;
+        }
+
+        Step currentStep = currentRouteSteps.get(currentStepIndex);
+
+        // 1. Tìm đích của bước hiện tại
+        int endIndex = currentStep.way_points[1];
+        if (endIndex >= mFullRoutePath.size()) endIndex = mFullRoutePath.size() - 1;
+        LatLng targetPoint = mFullRoutePath.get(endIndex);
+
+        // 2. Tính khoảng cách
+        float[] results = new float[1];
+        Location.distanceBetween(
+                userLocation.getLatitude(), userLocation.getLongitude(),
+                targetPoint.latitude, targetPoint.longitude,
+                results
+        );
+        float distanceToNextStep = results[0];
+
+        // 3. Update UI (ĐÃ SỬ DỤNG HÀM CLEAN)
+        navInstruction.setText(cleanInstruction(currentStep.instruction));
+
+        if (distanceToNextStep < 1000) {
+            navDistance.setText((int) distanceToNextStep + " m");
+        } else {
+            navDistance.setText(String.format("%.1f km", distanceToNextStep / 1000));
+        }
+
+        // 4. Nhảy bước nếu gần
+        if (distanceToNextStep < 20) {
+            currentStepIndex++;
+            if (currentStepIndex < currentRouteSteps.size()) {
+                Toast.makeText(this, "Tiếp theo: " + cleanInstruction(currentRouteSteps.get(currentStepIndex).instruction), Toast.LENGTH_SHORT).show();
+                updateNavigationProgress(userLocation);
+            } else {
+                Toast.makeText(this, "Đã đến đích!", Toast.LENGTH_LONG).show();
+                stopNavigation();
+            }
         }
     }
 
@@ -281,12 +339,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     public void onSuccess(List<LatLng> path, List<Step> steps, double dist, double dur) {
                         mapHelper.drawPolyline(path);
                         currentRouteSteps = steps;
+                        mFullRoutePath = path;
 
                         if (dist < 1000) tvDistance.setText(String.format("(%d m)", (int)dist));
                         else tvDistance.setText(String.format("(%.1f km)", dist/1000));
 
                         int min = (int)(dur/60);
                         tvDuration.setText(min + " phút");
+
                         if(stepAdapter != null) stepAdapter.setData(steps);
                     }
                     @Override public void onError(String msg) { tvDuration.setText("Lỗi"); }
@@ -316,26 +376,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    // --- SEARCH & DATA ---
-
-    // [LOAD BAN ĐẦU]
+    // --- SEARCH ---
     private void loadAllPlaces() {
         showLoading();
         mapHelper.clearPolyline();
         placeRepository.getAllPlaces(new DataCallback<List<Place>>() {
             @Override public void onSuccess(List<Place> data) {
                 hideLoading();
-
-                // [SỬA 1] Hiển thị "Gợi ý cho bạn" khi mới vào
                 if (tvResultCount != null) tvResultCount.setText("Gợi ý cho bạn");
-
                 updateMapAndList(data);
             }
             @Override public void onError(String message) { hideLoading(); }
         });
     }
 
-    // [KHI TÌM KIẾM]
     private void performSearch() {
         if (currentUserLocation == null) { checkAndGetLocation(); return; }
         if (etSearch != null) currentKeyword = etSearch.getText().toString().trim();
@@ -346,21 +400,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 new DataCallback<List<Place>>() {
                     @Override public void onSuccess(List<Place> data) {
                         hideLoading();
-
-                        // [SỬA 2] Hiển thị "Kết quả (n)" khi tìm kiếm
-                        if (tvResultCount != null) {
-                            tvResultCount.setText("Kết quả (" + (data != null ? data.size() : 0) + ")");
-                        }
-
+                        if (tvResultCount != null) tvResultCount.setText("Kết quả (" + (data != null ? data.size() : 0) + ")");
                         updateMapAndList(data);
-
                         if(data!=null && !data.isEmpty() && currentDestination==null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                     }
                     @Override public void onError(String message) { hideLoading(); }
                 });
     }
 
-    // Hàm cập nhật Map và RecyclerView chung
     private void updateMapAndList(List<Place> places) {
         runOnUiThread(() -> {
             if(placeAdapter!=null) placeAdapter.setData(places);
@@ -368,7 +415,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    // --- FILTER CHIPS ---
+    // --- FILTERS ---
     private void setupFilterChips() {
         chipGroupFilter.removeAllViews();
         addRadiusChip();
@@ -395,9 +442,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         BottomSheetDialog d = new BottomSheetDialog(this);
         View v = LayoutInflater.from(this).inflate(R.layout.layout_radius_bottom_sheet, null);
         ChipGroup g = v.findViewById(R.id.cgRadiusPresets);
-        Button btn = v.findViewById(R.id.btnApplyRadius);
+        com.google.android.material.button.MaterialButton btn = v.findViewById(R.id.btnApplyRadius);
         btn.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
         btn.setTextColor(ContextCompat.getColor(this, R.color.white));
+
         tempSelectedRadius = currentRadius;
         for(int km : RADIUS_OPTIONS) {
             Chip c = new Chip(this); c.setText(km+" km"); c.setCheckable(true); c.setClickable(true);

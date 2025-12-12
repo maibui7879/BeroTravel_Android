@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat; // Import để lấy màu
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.berotravel20.R;
@@ -39,9 +39,9 @@ public class DirectionStepAdapter extends RecyclerView.Adapter<DirectionStepAdap
     public void onBindViewHolder(@NonNull StepViewHolder holder, int position) {
         Step step = steps.get(position);
 
-        // 1. Xử lý câu hướng dẫn
-        String rawInstruction = step.instruction;
-        holder.tvInstruction.setText(capitalizeFirstLetter(rawInstruction));
+        // [FIX LỖI LẶP TỪ] Sử dụng hàm cleanInstruction thay vì chỉ viết hoa
+        String cleanedInstruction = cleanInstruction(step.instruction);
+        holder.tvInstruction.setText(cleanedInstruction);
 
         // 2. Format khoảng cách
         if (step.distance < 1000) {
@@ -50,19 +50,13 @@ public class DirectionStepAdapter extends RecyclerView.Adapter<DirectionStepAdap
             holder.tvStepDistance.setText(String.format("%.1f km", step.distance / 1000));
         }
 
-        // 3. Chọn Icon dựa trên loại chỉ dẫn
+        // 3. Chọn Icon
         int iconRes = getIconForStepType(step.type);
         holder.imgIcon.setImageResource(iconRes);
 
-        // --- [CẬP NHẬT MÀU SẮC] ---
-
-        // Icon chỉ hướng: Tô màu chủ đạo (Primary Background - #007A8C)
+        // --- MÀU SẮC ---
         holder.imgIcon.setColorFilter(ContextCompat.getColor(context, R.color.colorPrimaryBackground));
-
-        // Khoảng cách: Tô màu xám (General Text - #6C757D)
         holder.tvStepDistance.setTextColor(ContextCompat.getColor(context, R.color.colorGeneralText));
-
-        // Câu lệnh: Màu đen cho rõ ràng
         holder.tvInstruction.setTextColor(ContextCompat.getColor(context, R.color.black));
     }
 
@@ -71,15 +65,27 @@ public class DirectionStepAdapter extends RecyclerView.Adapter<DirectionStepAdap
         return steps.size();
     }
 
-    // Hàm viết hoa chữ cái đầu
+    // [HÀM MỚI] Xử lý chuỗi để xóa từ lặp và viết hoa
+    private String cleanInstruction(String raw) {
+        if (raw == null || raw.isEmpty()) return "";
+
+        String s = raw.trim();
+
+        // Xử lý các lỗi lặp từ thường gặp từ API (không phân biệt hoa thường)
+        // (?i) là cờ case-insensitive, ^ là bắt đầu chuỗi
+        s = s.replaceAll("(?i)^Rẽ Rẽ", "Rẽ");
+        s = s.replaceAll("(?i)^Đi Đi", "Đi");
+        s = s.replaceAll("(?i)^Quay đầu Quay đầu", "Quay đầu");
+
+        // Viết hoa chữ cái đầu tiên
+        return capitalizeFirstLetter(s);
+    }
+
     private String capitalizeFirstLetter(String original) {
-        if (original == null || original.isEmpty()) {
-            return original;
-        }
+        if (original == null || original.isEmpty()) return original;
         return original.substring(0, 1).toUpperCase() + original.substring(1);
     }
 
-    // Hàm map icon
     private int getIconForStepType(int type) {
         switch (type) {
             case 0: // Left
@@ -95,7 +101,6 @@ public class DirectionStepAdapter extends RecyclerView.Adapter<DirectionStepAdap
             case 11: // Roundabout
                 return R.drawable.ic_roundabout;
             case 12: // Arrive
-            case 13:
             default:
                 return R.drawable.ic_search_gray;
         }
