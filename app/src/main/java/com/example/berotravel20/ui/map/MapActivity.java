@@ -40,7 +40,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.button.MaterialButtonToggleGroup; // IMPORT QUAN TRỌNG
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -70,8 +70,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private LinearLayout layoutDirections;
     private DirectionStepAdapter stepAdapter;
     private TextView tvDuration, tvDistance;
-
-    // [FIX] Dùng ToggleGroup, XÓA các biến ImageView lẻ tẻ
     private MaterialButtonToggleGroup toggleTransportMode;
 
     // UI Navigation Active
@@ -137,13 +135,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         // --- 2. BOTTOM SHEET ---
         LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setHideable(true); // Cho phép ẩn khi dẫn đường
         bottomSheetBehavior.setFitToContents(false);
         bottomSheetBehavior.setHalfExpandedRatio(0.5f);
         bottomSheetBehavior.setPeekHeight(dpToPx(240));
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-
-        // [QUAN TRỌNG] Cho phép ẩn bottom sheet khi vào Navigation Mode
-        bottomSheetBehavior.setHideable(true);
 
         layoutSearchResults = findViewById(R.id.layout_search_results);
         layoutDirections = findViewById(R.id.layout_directions);
@@ -169,9 +165,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         tvDuration = findViewById(R.id.tvDuration);
         tvDistance = findViewById(R.id.tvDistance);
 
-        // [FIX] Ánh xạ ToggleGroup thay vì tìm từng nút con
         toggleTransportMode = findViewById(R.id.toggleTransportMode);
-
         toggleTransportMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 if (checkedId == R.id.btnModeCar) selectTransportMode("driving-car");
@@ -201,7 +195,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void selectTransportMode(String mode) {
         if (mode.equals(currentTransportProfile)) return;
         currentTransportProfile = mode;
-        // Không cần update UI thủ công vì ToggleGroup tự lo
         if (currentDestination != null) fetchRoute(currentDestination);
     }
 
@@ -246,7 +239,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             currentUserLocation = location;
             if (isNavigating) {
                 mapHelper.updateNavigationCamera(location);
-                // Demo Update Step
                 if (currentRouteSteps != null && !currentRouteSteps.isEmpty()) {
                     Step s = currentRouteSteps.get(0);
                     navInstruction.setText(s.instruction);
@@ -273,11 +265,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mapHelper.stopNavigationMode();
         mapHelper.enableMyLocationLayer();
     }
-
-    // ... (Giữ nguyên các phần fetchRoute, onMapReady, checkAndGetLocation, search, filter...)
-
-    // Copy lại phần fetchRoute, performSearch, v.v... từ code cũ nếu cần, hoặc giữ nguyên
-    // Vì phần này không gây lỗi ClassCastException.
 
     // --- API ROUTE ---
     private void fetchRoute(Place destination) {
@@ -306,6 +293,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 });
     }
 
+    // --- MAP LIFECYCLE ---
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mapHelper.setGoogleMap(googleMap);
@@ -321,7 +309,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void checkAndGetLocation() {
         locationHelper.getLastLocation(location -> {
             currentUserLocation = location;
-            // Chỉ move camera nếu chưa chọn điểm đến (tránh giật khi đang xem đường)
             if (currentDestination == null) {
                 mapHelper.moveCamera(new LatLng(location.getLatitude(), location.getLongitude()), 15f);
             }
@@ -329,15 +316,26 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
+    // --- SEARCH & DATA ---
+
+    // [LOAD BAN ĐẦU]
     private void loadAllPlaces() {
         showLoading();
         mapHelper.clearPolyline();
         placeRepository.getAllPlaces(new DataCallback<List<Place>>() {
-            @Override public void onSuccess(List<Place> data) { hideLoading(); updateSearchResults(data); }
+            @Override public void onSuccess(List<Place> data) {
+                hideLoading();
+
+                // [SỬA 1] Hiển thị "Gợi ý cho bạn" khi mới vào
+                if (tvResultCount != null) tvResultCount.setText("Gợi ý cho bạn");
+
+                updateMapAndList(data);
+            }
             @Override public void onError(String message) { hideLoading(); }
         });
     }
 
+    // [KHI TÌM KIẾM]
     private void performSearch() {
         if (currentUserLocation == null) { checkAndGetLocation(); return; }
         if (etSearch != null) currentKeyword = etSearch.getText().toString().trim();
@@ -347,21 +345,30 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         placeRepository.searchNearby(currentUserLocation.getLatitude(), currentUserLocation.getLongitude(), currentRadius, currentKeyword.isEmpty()?"":currentKeyword, currentCategory,
                 new DataCallback<List<Place>>() {
                     @Override public void onSuccess(List<Place> data) {
-                        hideLoading(); updateSearchResults(data);
+                        hideLoading();
+
+                        // [SỬA 2] Hiển thị "Kết quả (n)" khi tìm kiếm
+                        if (tvResultCount != null) {
+                            tvResultCount.setText("Kết quả (" + (data != null ? data.size() : 0) + ")");
+                        }
+
+                        updateMapAndList(data);
+
                         if(data!=null && !data.isEmpty() && currentDestination==null) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                     }
                     @Override public void onError(String message) { hideLoading(); }
                 });
     }
 
-    private void updateSearchResults(List<Place> places) {
+    // Hàm cập nhật Map và RecyclerView chung
+    private void updateMapAndList(List<Place> places) {
         runOnUiThread(() -> {
             if(placeAdapter!=null) placeAdapter.setData(places);
-            if(tvResultCount!=null) tvResultCount.setText("Kết quả (" + (places!=null?places.size():0) + ")");
             mapHelper.showMarkers(places);
         });
     }
 
+    // --- FILTER CHIPS ---
     private void setupFilterChips() {
         chipGroupFilter.removeAllViews();
         addRadiusChip();
