@@ -24,8 +24,10 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     private List<Place> placeList = new ArrayList<>();
     private OnItemClickListener listener;
 
+    // Giữ nguyên tên Interface cũ, chỉ thêm hàm onDirectionClick
     public interface OnItemClickListener {
         void onItemClick(Place place);
+        void onDirectionClick(Place place); // <--- MỚI THÊM
     }
 
     public MapPlaceAdapter(Context context, OnItemClickListener listener) {
@@ -52,11 +54,11 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     public void onBindViewHolder(@NonNull PlaceViewHolder holder, int position) {
         Place place = placeList.get(position);
 
-        // 1. Tên & Địa chỉ
+        // 1. Tên & Địa chỉ (Logic cũ)
         if (holder.tvName != null) holder.tvName.setText(place.name);
         if (holder.tvAddress != null) holder.tvAddress.setText(place.address);
 
-        // 2. Ảnh
+        // 2. Ảnh (Logic cũ)
         if (holder.imgPlace != null) {
             if (place.imageUrl != null && !place.imageUrl.isEmpty()) {
                 Glide.with(context)
@@ -70,7 +72,7 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             }
         }
 
-        // 3. LOGIC HIỂN THỊ THÔNG TIN CHI TIẾT
+        // 3. LOGIC HIỂN THỊ THÔNG TIN CHI TIẾT (Logic cũ giữ nguyên 100%)
         StringBuilder statusBuilder = new StringBuilder();
 
         // A. Trạng thái (Mở/Đóng)
@@ -91,12 +93,9 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             statusBuilder.append("Thông tin");
         }
 
-        // C. KHOẢNG CÁCH (Đây là phần bạn cần)
-        // Log kiểm tra xem dữ liệu có vào không
+        // C. KHOẢNG CÁCH
         if (place.distance != null) {
-            Log.d("ADAPTER", "Item: " + place.name + " - Dist: " + place.distance);
-
-            // Format: " • Cách 1.2 km"
+            // Log.d("ADAPTER", "Item: " + place.name + " - Dist: " + place.distance);
             statusBuilder.append(" • Cách ")
                     .append(String.format("%.1f", place.distance))
                     .append(" km");
@@ -107,9 +106,19 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             holder.tvStatusInfo.setText(statusBuilder.toString());
         }
 
+        // --- SỰ KIỆN CLICK ---
+
+        // Click vào item
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onItemClick(place);
         });
+
+        // Click vào nút chỉ đường (Mới thêm)
+        if (holder.btnDirection != null) {
+            holder.btnDirection.setOnClickListener(v -> {
+                if (listener != null) listener.onDirectionClick(place);
+            });
+        }
     }
 
     @Override
@@ -120,6 +129,7 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     public static class PlaceViewHolder extends RecyclerView.ViewHolder {
         ImageView imgPlace;
         TextView tvName, tvAddress, tvStatusInfo;
+        View btnDirection; // View mới cho nút chỉ đường
 
         public PlaceViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -127,6 +137,9 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             tvName = itemView.findViewById(R.id.tvPlaceName);
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvStatusInfo = itemView.findViewById(R.id.tvStatusInfo);
+
+            // Ánh xạ ID nút chỉ đường (Cần thêm id này vào XML)
+            btnDirection = itemView.findViewById(R.id.btnDirections);
         }
     }
 }
