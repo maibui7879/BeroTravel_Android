@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 🔹 LỚP DƯỚI: BACKGROUND (NỀN) -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/background"
+        android:scaleType="centerCrop" />
+
+    <!-- 🔹 LOGO Ở GIỮA -->
+    <ImageView
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="90dp"
+        android:src="@drawable/logo_background"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true" />
+
+    <!-- 🔹 LỚP TRÊN: CARD TRẮNG (FILL ĐÁY MÀN HÌNH) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="225dp"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/bg_white_rounded_top_20">
+
+        <!-- KHỐI CĂN GIỮA DỌC CHO TIÊU ĐỀ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <!-- TEXT TIÊU ĐỀ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sẵn sàng cho hành trình không giới hạn?"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#007A8C"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- NÚT GET STARTED -->
+        <LinearLayout
+            android:id="@+id/btnGetStarted"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="5dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_button_primary_ripple"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hành trình của bạn bắt đầu từ đây"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/fly"
+                app:tint="#FFFFFF" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>
