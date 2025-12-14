@@ -15,67 +15,69 @@
         android:layout_width="350dp"
         android:layout_height="460dp"
         android:layout_gravity="center"
+        android:background="@drawable/bg_signup_container"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@drawable/bg_signup_container">
+        android:padding="24dp">
 
         <!-- TITLE -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Chào mừng bạn quay trở lại"
-            android:textSize="19sp"
-            android:textStyle="bold"
-            android:textColor="#336749"
             android:gravity="center"
-            android:lineSpacingExtra="6dp" />
+            android:lineSpacingExtra="6dp"
+            android:text="Chào mừng bạn quay trở lại"
+            android:textColor="#336749"
+            android:textSize="19sp"
+            android:textStyle="bold" />
 
         <!-- EMAIL -->
         <EditText
+            android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="40dp"
+            android:background="@drawable/bg_input_focus"
             android:hint="Email"
             android:inputType="textEmailAddress"
             android:paddingHorizontal="16dp"
             android:textColor="#336749"
-            android:textColorHint="#99336749"
-            android:background="@drawable/bg_input_focus"/>
+            android:textColorHint="#99336749" />
 
         <!-- PASSWORD -->
         <EditText
+            android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="14dp"
+            android:background="@drawable/bg_input_focus"
             android:hint="Mật khẩu"
             android:inputType="textPassword"
             android:paddingHorizontal="16dp"
             android:textColor="#336749"
-            android:textColorHint="#99336749"
-            android:background="@drawable/bg_input_focus"/>
+            android:textColorHint="#99336749" />
         <!-- QUÊN MẬT KHẨU -->
         <TextView
             android:id="@+id/tvForgotPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="end"
             android:text="Quên mật khẩu?"
             android:textColor="#336749"
-            android:textSize="13sp"
-            android:gravity="end"
-            android:clickable="true"
-            android:focusable="true" />
+            android:textSize="13sp" />
 
         <!-- SIGN IN BUTTON -->
         <LinearLayout
-            android:id="@+id/btnSignIn"
+            android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="54dp"
             android:layout_marginTop="32dp"
-            android:gravity="center"
             android:background="@drawable/bg_button_signup"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:gravity="center">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -83,19 +85,27 @@
                 android:text="Sign In"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:textStyle="bold" />
         </LinearLayout>
-
+        <!-- ProgressBar loading khi đăng nhập -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:indeterminateTint="#336749" />
         <!-- SIGN UP LINK -->
         <TextView
-            android:id="@+id/tvSignUp"
+            android:id="@+id/tvGoToRegister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
+            android:gravity="center"
             android:text="Chưa có tài khoản? Sign Up"
             android:textColor="#336749"
-            android:textSize="13sp"
-            android:gravity="center" />
+            android:textSize="13sp" />
 
     </LinearLayout>
 
