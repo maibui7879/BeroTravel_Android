@@ -76,8 +76,8 @@ public class LoginFragment extends Fragment {
         // 5. Chuyển sang màn hình Đăng ký
         tvGoToRegister.setOnClickListener(v -> {
             if (getActivity() instanceof AuthActivity) {
-                // ((AuthActivity) getActivity()).switchFragment(new RegisterFragment());
-                Toast.makeText(getContext(), "Chuyển sang đăng ký (Cần tạo RegisterFragment)", Toast.LENGTH_SHORT).show();
+                // Gọi hàm loadFragment để chuyển trang
+                ((AuthActivity) getActivity()).loadFragment(new RegisterFragment());
             }
         });
     }
