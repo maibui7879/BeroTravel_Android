@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Details"
+            android:text="@string/details_title"
             android:textSize="18sp"
             android:textColor="@color/black"
             android:textStyle="bold"/>
@@ -110,7 +110,7 @@
                         android:id="@+id/tv_price"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Miễn phí"
+                        android:text="@string/free_ticket"
                         android:textSize="14sp"
                         android:textColor="#888"/>
                 </LinearLayout>
@@ -142,7 +142,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Description"
+                android:text="@string/description_label"
                 android:textColor="@color/teal_700"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -161,7 +161,7 @@
                 android:id="@+id/tv_read_more"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Read more"
+                android:text="@string/read_more"
                 android:textColor="@color/teal_700"
                 android:textStyle="bold"
                 android:layout_marginTop="4dp"
@@ -178,7 +178,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Photos"
+                    android:text="@string/photos_label"
                     android:textColor="@color/teal_700"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
@@ -186,7 +186,7 @@
                     android:id="@+id/tv_see_all_photos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="See all"
+                    android:text="@string/see_all"
                     android:textColor="@color/teal_700"/>
             </LinearLayout>
 
@@ -209,7 +209,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Reviews"
+                    android:text="@string/reviews_label"
                     android:textColor="@color/teal_700"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
@@ -217,7 +217,7 @@
                     android:id="@+id/btn_add_review"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Write Review"
+                    android:text="@string/write_review"
                     android:backgroundTint="@color/teal_700"
                     android:textColor="@color/white"
                     android:textSize="12sp"
@@ -243,7 +243,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Direction"
+                    android:text="@string/direction_button"
                     android:backgroundTint="#2E8B57"
                     android:textColor="@color/white"
                     app:icon="@android:drawable/ic_menu_directions"
@@ -257,7 +257,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Book Now"
+                    android:text="@string/book_now"
                     android:backgroundTint="@color/teal_700"
                     android:textColor="@color/white"
                     android:padding="12dp"

@@ -17,7 +17,7 @@
         android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back"
-        app:title="Confirm Booking"
+        app:title="@string/confirm_booking"
         app:titleTextColor="@color/black"
         app:titleTextAppearance="@style/TextAppearance.AppCompat.Medium" />
 
@@ -48,7 +48,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Price/Day"
+                        android:text="@string/price_per_day"
                         android:textColor="@color/black" />
                     <TextView
                         android:id="@+id/tv_price_per_day"
@@ -69,7 +69,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Dates"
+                        android:text="@string/check_in_date"
                         android:textColor="@color/black" />
                     <TextView
                         android:id="@+id/tv_dates"
@@ -90,7 +90,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Guest"
+                        android:text="@string/guests_label"
                         android:textColor="@color/black" />
                     <TextView
                         android:id="@+id/tv_guests"
@@ -111,7 +111,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Number of Days"
+                        android:text="@string/total_days"
                         android:textColor="@color/black" />
                     <TextView
                         android:id="@+id/tv_total_days"
@@ -132,7 +132,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Tax"
+                        android:text="@string/tax"
                         android:textColor="@color/black" />
                     <TextView
                          android:id="@+id/tv_tax"
@@ -153,7 +153,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Total"
+                        android:text="@string/total_price"
                         android:textColor="@color/black"
                         android:textSize="16sp" />
                     <TextView
@@ -239,7 +239,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Check In"
+                                android:text="@string/check_in_date"
                                 android:textSize="12sp"
                                 android:textColor="#555"/>
                             <TextView
@@ -263,7 +263,7 @@
                              <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Check Out"
+                                android:text="@string/check_out_date"
                                 android:textSize="12sp"
                                 android:textColor="#555"/>
                             <TextView
@@ -290,7 +290,7 @@
         android:id="@+id/btn_proceed_payment"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:text="Proceed to pay"
+        android:text="@string/proceed_to_pay"
         android:textColor="@color/white"
         android:textAllCaps="false"
         android:textSize="18sp"

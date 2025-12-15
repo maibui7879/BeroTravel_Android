@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rate this place"
+        android:text="Xếp hạng địa điểm này"
         android:textSize="18sp"
         android:textStyle="bold"
         android:layout_gravity="center_horizontal"
@@ -25,7 +25,7 @@
         android:id="@+id/et_comment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Write your review..."
+        android:hint="Viết nhận xét của bạn..."
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/teal_700"/>
 

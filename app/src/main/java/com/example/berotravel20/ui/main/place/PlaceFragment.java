@@ -327,6 +327,20 @@ public class PlaceFragment extends Fragment {
             }
         });
 
+        tvReadMore.setOnClickListener(v -> {
+            if (isDescriptionExpanded) {
+                tvDescription.setMaxLines(3);
+                tvDescription.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                tvReadMore.setText(getString(R.string.read_more));
+                isDescriptionExpanded = false;
+            } else {
+                tvDescription.setMaxLines(Integer.MAX_VALUE);
+                tvDescription.setEllipsize(null);
+                tvReadMore.setText(getString(R.string.read_less));
+                isDescriptionExpanded = true;
+            }
+        });
+
         double priceValue = place.price;
         if (place.status != null && place.status.price > 0) {
             priceValue = place.status.price;
@@ -343,10 +357,10 @@ public class PlaceFragment extends Fragment {
             if (btnBooking != null)
                 btnBooking.setVisibility(View.GONE);
             if (priceValue == 0) {
-                tvPrice.setText("Vé vào cửa: Miễn phí");
+                tvPrice.setText(getString(R.string.free_ticket));
                 tvPrice.setTextColor(android.graphics.Color.GREEN);
             } else {
-                tvPrice.setText(String.format("Vé vào cửa: %,.0f", priceValue));
+                tvPrice.setText(getString(R.string.ticket_price_format, priceValue));
                 tvPrice.setTextColor(android.graphics.Color.BLACK);
             }
         }

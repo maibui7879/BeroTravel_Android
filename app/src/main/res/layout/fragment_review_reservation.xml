@@ -15,7 +15,7 @@
         android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back"
-        app:title="Review Reservation"
+        app:title="@string/review_reservation"
         app:titleTextColor="@color/black"
         app:titleTextAppearance="@style/TextAppearance.AppCompat.Medium" />
 
@@ -76,7 +76,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stay information"
+                android:text="@string/details_title"
                 android:textColor="#888888"
                 android:layout_marginBottom="8dp"/>
 
@@ -104,7 +104,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Summary of charges"
+                android:text="@string/total_price"
                 android:textColor="#888888"
                 android:textSize="16sp"
                 android:layout_marginBottom="12dp"/>
@@ -121,7 +121,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:paddingVertical="4dp">
-                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Mon, Feb 06" android:textColor="@color/black"/>
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/price_per_day" android:textColor="@color/black"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="85 USD" android:textColor="@color/black" android:textStyle="bold"/>
                 </LinearLayout>
                 
@@ -130,7 +130,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:paddingVertical="4dp">
-                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Tax" android:textColor="@color/black"/>
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/tax" android:textColor="@color/black"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.50 USD" android:textColor="@color/black" android:textStyle="bold"/>
                 </LinearLayout>
             </LinearLayout>
@@ -145,7 +145,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Total"
+                    android:text="@string/total_price"
                     android:textSize="18sp"
                     android:textColor="@color/black"/>
                 <TextView
@@ -161,7 +161,7 @@
              <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Payment Information"
+                android:text="@string/payment_title"
                 android:textColor="#888888"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="8dp"/>
@@ -201,7 +201,7 @@
              <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Any change in the length or dates of a reservation may result in a rate change."
+                android:text="Mọi thay đổi trong đặt phòng có thể dẫn đến thay đổi giá."
                 android:textColor="@color/black"
                 android:textSize="13sp"/>
                 
@@ -210,13 +210,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancellation Policy"
+                android:text="Chính sách hủy"
                 android:textColor="#888888"
                 android:layout_marginBottom="8dp"/>
              <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="You may cancel your reservation for no charge, before 3 days' arrival. Please note that we will assess a fee of 256.05 USD if you must cancel after this deadline."
+                android:text="Bạn có thể hủy miễn phí trước 3 ngày nhận phòng."
                 android:textColor="@color/black"
                 android:textSize="13sp"/>
 
@@ -227,7 +227,7 @@
         android:id="@+id/btn_book_now"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:text="Book Now"
+        android:text="@string/confirm_booking"
         android:textColor="@color/white"
         android:textAllCaps="false"
         android:textSize="18sp"

@@ -83,7 +83,7 @@ public class BookingFragment extends Fragment {
         btnBookNow = view.findViewById(R.id.btn_book_now);
 
         tvPlaceName.setText(placeName);
-        tvAddress.setText("Mock Address, City"); // Ideally passed via args or fetched
+        tvAddress.setText(getString(R.string.mock_address)); // Ideally passed via args or fetched
 
         // Defaults
         checkoutDate.add(Calendar.DAY_OF_MONTH, 3); // Default 3 days
@@ -122,7 +122,7 @@ public class BookingFragment extends Fragment {
         String peopleStr = etPeople.getText().toString();
 
         if (peopleStr.isEmpty()) {
-            Toast.makeText(getContext(), "Please enter number of guests", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.enter_guests_error), Toast.LENGTH_SHORT).show();
             return;
         }
 

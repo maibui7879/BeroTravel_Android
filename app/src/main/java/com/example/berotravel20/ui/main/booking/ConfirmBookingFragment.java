@@ -148,8 +148,8 @@ public class ConfirmBookingFragment extends Fragment {
 
         tvPricePerDay.setText("$" + pricePerDay);
         tvDates.setText(dateRange);
-        tvGuests.setText(guests + " Guest");
-        tvTotalDays.setText(days + " Days");
+        tvGuests.setText(getString(R.string.guest_format, guests));
+        tvTotalDays.setText(getString(R.string.days_format, days));
         tvTax.setText("$" + String.format("%.2f", tax));
         tvTotalPrice.setText("$" + String.format("%.2f", grandTotal));
 
