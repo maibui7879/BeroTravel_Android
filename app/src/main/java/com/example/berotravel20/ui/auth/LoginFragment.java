@@ -33,7 +33,8 @@ public class LoginFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
@@ -71,8 +72,7 @@ public class LoginFragment extends Fragment {
         // 5. Chuyển sang màn hình Đăng ký
         tvGoToRegister.setOnClickListener(v -> {
             if (getActivity() instanceof AuthActivity) {
-                // ((AuthActivity) getActivity()).switchFragment(new RegisterFragment());
-                Toast.makeText(getContext(), "Chuyển sang đăng ký (Cần tạo RegisterFragment)", Toast.LENGTH_SHORT).show();
+                ((AuthActivity) getActivity()).loadFragment(new RegisterFragment());
             }
         });
     }
@@ -84,15 +84,23 @@ public class LoginFragment extends Fragment {
                 // Login thành công!
                 Toast.makeText(getContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
-                // Lưu token vào SharedPreferences (Ví dụ)
-                // SharedPreferencesUtils.saveToken(getContext(), response.token);
+                // Lưu token vào SharedPreferences
+                String token = response.token;
+                // Nếu AuthResponse trả về User object
+                com.example.berotravel20.data.model.User.User user = response.user;
+
+                com.example.berotravel20.utils.SharedPreferencesUtils.getInstance(getContext()).saveToken(token);
+                if (user != null) {
+                    com.example.berotravel20.utils.SharedPreferencesUtils.getInstance(getContext()).saveUser(user);
+                }
 
                 // Chuyển sang MainActivity
                 Intent intent = new Intent(getActivity(), MainActivity.class);
                 startActivity(intent);
 
                 // Đóng AuthActivity để user không back lại được
-                if (getActivity() != null) getActivity().finish();
+                if (getActivity() != null)
+                    getActivity().finish();
             }
         });
 
