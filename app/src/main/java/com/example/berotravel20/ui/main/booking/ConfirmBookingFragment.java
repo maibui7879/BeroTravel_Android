@@ -170,9 +170,8 @@ public class ConfirmBookingFragment extends Fragment {
     }
 
     private void submitBooking() {
-        // Navigate to Success Screen directly (API call is moved to
-        // ReviewReservationFragment)
-        BookingSuccessFragment successFragment = BookingSuccessFragment.newInstance(
+        // Navigate to QR Payment Screen
+        PaymentQrFragment paymentFragment = PaymentQrFragment.newInstance(
                 placeId,
                 placeName,
                 tvDates.getText().toString() + " (" + tvTotalDays.getText().toString() + ")",
@@ -182,7 +181,7 @@ public class ConfirmBookingFragment extends Fragment {
                 checkoutTime);
 
         getParentFragmentManager().beginTransaction()
-                .replace(R.id.base_container, successFragment)
+                .replace(R.id.base_container, paymentFragment)
                 .addToBackStack(null)
                 .commit();
     }
