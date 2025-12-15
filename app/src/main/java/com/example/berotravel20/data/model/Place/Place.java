@@ -15,6 +15,9 @@ public class Place {
     public String description;
     public String category;
 
+    @SerializedName("price")
+    public double price;
+
     @SerializedName("image_url")
     public String imageUrl;
 
@@ -30,7 +33,7 @@ public class Place {
 
     @SerializedName("distance")
     public Double distance;
-    
+
     public String updatedAt;
 
     // Object status được lồng bên trong
@@ -44,8 +47,10 @@ public class Place {
         public double longitude;
         public String description;
         public String category;
-        @SerializedName("image_url") public String imageUrl;
-        @SerializedName("img_set") public List<String> imgSet;
+        @SerializedName("image_url")
+        public String imageUrl;
+        @SerializedName("img_set")
+        public List<String> imgSet;
         public Contact contact;
     }
 

@@ -1,14 +1,277 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.main.place.PlaceFragment">
+    android:orientation="vertical"
+    android:background="@color/white">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:titleTextColor="@color/black">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Details"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"/>
+    </androidx.appcompat.widget.Toolbar>
 
-</FrameLayout>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Main Image Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/img_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@android:color/darker_gray" />
+
+                <ImageButton
+                    android:id="@+id/btn_favorite"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="16dp"
+                    android:background="@drawable/circle_bg_translucent"
+                    android:src="@android:drawable/btn_star_big_on"
+                    app:tint="@color/teal_200"
+                    android:contentDescription="Favorite" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Rating -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/star_on"
+                    app:tint="#FFD700"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5.0"
+                    android:textStyle="bold"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Title & Price Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Bảo tàng Hà Nội"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="end">
+
+                    <TextView
+                        android:id="@+id/tv_price"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Miễn phí"
+                        android:textSize="14sp"
+                        android:textColor="#888"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Address -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/ic_menu_mylocation"
+                    app:tint="#888"/>
+                <TextView
+                    android:id="@+id/tv_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="The Nautilus Maldives, Baa Atoll"
+                    android:textSize="14sp"
+                    android:textColor="#888"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <!-- Description -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Description"
+                android:textColor="@color/teal_700"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp"/>
+
+            <TextView
+                android:id="@+id/tv_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Each of the 26 houses is a suite..."
+                android:textColor="#666"
+                android:layout_marginTop="8dp"
+                android:lineSpacingMultiplier="1.2"/>
+
+            <TextView
+                android:id="@+id/tv_read_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Read more"
+                android:textColor="@color/teal_700"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"/>
+
+            <!-- Photos Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Photos"
+                    android:textColor="@color/teal_700"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_see_all_photos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="See all"
+                    android:textColor="@color/teal_700"/>
+            </LinearLayout>
+
+            <!-- Photos List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_photos"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp"/>
+
+            <!-- Reviews Section -->
+             <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Reviews"
+                    android:textColor="@color/teal_700"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+                 <Button
+                    android:id="@+id/btn_add_review"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Write Review"
+                    android:backgroundTint="@color/teal_700"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:minHeight="40dp"/>
+            </LinearLayout>
+            
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_reviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false"/>
+
+            <!-- Bottom Actions -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="32dp"
+                android:weightSum="2">
+
+                <Button
+                    android:id="@+id/btn_direction"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Direction"
+                    android:backgroundTint="#2E8B57"
+                    android:textColor="@color/white"
+                    app:icon="@android:drawable/ic_menu_directions"
+                    app:iconTint="@color/white"
+                    android:padding="12dp"
+                    android:layout_marginEnd="8dp"
+                    app:cornerRadius="24dp"/>
+
+                <Button
+                    android:id="@+id/btn_booking"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Book Now"
+                    android:backgroundTint="@color/teal_700"
+                    android:textColor="@color/white"
+                    android:padding="12dp"
+                    android:layout_marginStart="8dp"
+                    app:cornerRadius="24dp"/>
+
+            </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="50dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

@@ -7,4 +7,5 @@
     <color name="colorGeneralText">#6C757D</color>
     <color name="light_gray_stroke">#E0E0E0</color>
     <color name="teal_700">#018786</color>
+    <color name="teal_200">#03DAC5</color>
 </resources>

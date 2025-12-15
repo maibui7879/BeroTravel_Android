@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="160dp"
+    android:layout_height="220dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/img_place"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:scaleType="centerCrop"
+            android:src="@color/teal_200" />
+
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/img_place"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Place Name"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_name"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Address"
+            android:textColor="@color/colorGeneralText"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tv_category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/img_place"
+            android:layout_alignEnd="@id/img_place"
+            android:background="@drawable/rounded_bg_white"
+            android:padding="4dp"
+            android:text="Category"
+            android:textColor="@color/teal_700"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_margin="8dp"/>
+        
+        <TextView
+            android:id="@+id/tv_price"
+             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+             android:layout_marginBottom="8dp"
+             android:layout_marginStart="12dp"
+             android:text="$30000"
+             android:textSize="12sp"
+             android:textStyle="bold"
+             android:textColor="@color/teal_700"/>
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

@@ -22,6 +22,7 @@ public class BaseActivity extends AppCompatActivity {
     LinearLayout navHome, navMap, navAI, navSetting, navAccount;
     ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount;
     TextView textHome, textMap, textAI, textSetting, textAccount;
+    View bottomNavbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,9 +35,20 @@ public class BaseActivity extends AppCompatActivity {
         // Load fragment mặc định là Home
         setSelected(navHome);
         replaceFragment(new HomeFragment());
+
+        // Handle Bottom Navigation Visibility
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                bottomNavbar.setVisibility(View.GONE);
+            } else {
+                bottomNavbar.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void initViews() {
+        bottomNavbar = findViewById(R.id.bottom_navbar); // Main container
+
         navHome = findViewById(R.id.nav_home);
         navMap = findViewById(R.id.nav_map);
         navAI = findViewById(R.id.nav_ai);
@@ -100,15 +112,21 @@ public class BaseActivity extends AppCompatActivity {
         resetTab(iconAccount, textAccount);
 
         // set màu active cho tab được chọn
-        if (selected == navHome) setActive(iconHome, textHome);
-        // if (selected == navMap) setActive(iconMap, textMap); // Map là Activity riêng nên ko cần set active ở đây
-        if (selected == navAI) setActive(iconAI, textAI);
-        if (selected == navSetting) setActive(iconSetting, textSetting);
-        if (selected == navAccount) setActive(iconAccount, textAccount);
+        if (selected == navHome)
+            setActive(iconHome, textHome);
+        // if (selected == navMap) setActive(iconMap, textMap); // Map là Activity riêng
+        // nên ko cần set active ở đây
+        if (selected == navAI)
+            setActive(iconAI, textAI);
+        if (selected == navSetting)
+            setActive(iconSetting, textSetting);
+        if (selected == navAccount)
+            setActive(iconAccount, textAccount);
     }
 
     private void resetTab(ImageView icon, TextView label) {
-        // Đảm bảo bạn có định nghĩa màu trong colors.xml hoặc dùng Color.GRAY/Color.BLACK
+        // Đảm bảo bạn có định nghĩa màu trong colors.xml hoặc dùng
+        // Color.GRAY/Color.BLACK
         icon.setColorFilter(getColor(R.color.nav_default));
         label.setTextColor(getColor(R.color.nav_default));
     }
