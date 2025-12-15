@@ -151,8 +151,17 @@ public class PlaceFragment extends Fragment {
                     }
                 }
 
+                String address = "";
+                String imageUrl = "";
+                if (currentPlace != null) {
+                    address = currentPlace.address;
+                    imageUrl = currentPlace.image_url;
+                } else {
+                    address = tvLocation.getText().toString();
+                }
+
                 com.example.berotravel20.ui.main.booking.BookingFragment bookingFragment = com.example.berotravel20.ui.main.booking.BookingFragment
-                        .newInstance(currentPlaceId, tvTitle.getText().toString(), placePrice);
+                        .newInstance(currentPlaceId, tvTitle.getText().toString(), address, imageUrl, placePrice);
                 getParentFragmentManager().beginTransaction()
                         .replace(R.id.base_container, bookingFragment)
                         .addToBackStack(null)
