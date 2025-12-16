@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@drawable/bg_home_waves"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -30,7 +30,7 @@
                 android:layout_height="50dp"
                 android:src="@drawable/account_icon"
                 app:civ_border_width="1dp"
-                app:civ_border_color="#DDDDDD"/>
+                app:civ_border_color="#FFFFFF"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -43,7 +43,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Xin chào,"
-                    android:textColor="#757575"
+                    android:textColor="@color/white"
                     android:textSize="14sp"/>
 
                 <TextView
@@ -51,7 +51,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Đang tải..."
-                    android:textColor="#000000"
+                    android:textColor="@color/white"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
             </LinearLayout>
@@ -61,9 +61,9 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:padding="8dp"
-                android:background="@drawable/bg_white_rounded"
-                android:src="@drawable/ai_icon"
-                app:tint="#FF5722"/>
+                android:background="@drawable/rounded_background"
+                android:src="@drawable/ic_bell"
+                app:tint="@color/colorPrimaryText"/>
         </LinearLayout>
 
         <TextView
@@ -130,7 +130,7 @@
                     android:text="--°C"
                     android:textSize="28sp"
                     android:textStyle="bold"
-                    android:textColor="#FF5722"/>
+                    android:textColor="@color/colorPrimaryText"/>
 
                 <ImageView
                     android:id="@+id/ivWeatherIcon"
