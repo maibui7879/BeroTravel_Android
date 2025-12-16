@@ -71,7 +71,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="140dp"
+            android:layout_marginBottom="260dp"
             app:cardCornerRadius="28dp"
             app:cardElevation="6dp"
             android:clickable="true"
