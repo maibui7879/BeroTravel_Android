@@ -83,7 +83,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0") // để đặt Level.HEADERS là để nó "quay phim" ít lại:))
-
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 
     // Testing
     testImplementation(libs.junit)
