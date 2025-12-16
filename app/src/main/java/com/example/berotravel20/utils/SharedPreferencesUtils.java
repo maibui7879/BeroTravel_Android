@@ -51,6 +51,9 @@ public class SharedPreferencesUtils {
         Gson gson = new Gson();
         String json = gson.toJson(user);
         editor.putString(KEY_USER, json);
+        if (user != null && user.id != null) {
+            editor.putString("user_id", user.id);
+        }
         editor.apply();
     }
 
@@ -64,6 +67,7 @@ public class SharedPreferencesUtils {
 
     public void clearUser() {
         editor.remove(KEY_USER);
+        editor.remove("user_id");
         editor.apply();
     }
 

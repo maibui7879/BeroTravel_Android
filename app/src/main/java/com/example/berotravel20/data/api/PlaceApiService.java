@@ -20,13 +20,13 @@ public interface PlaceApiService {
             @Query("longitude") double lng,
             @Query("radius") Integer radius,
             @Query("name") String name, // Keyword tìm theo tên
-            @Query("category") String category
-    );
+            @Query("category") String category);
 
     @GET("/api/places/{id}")
     Call<Place> getPlace(@Path("id") String id);
 
-    // ... Các API POST/PUT/DELETE giữ nguyên (vì thường backend trả về Object đã tạo hoặc Void)
+    // ... Các API POST/PUT/DELETE giữ nguyên (vì thường backend trả về Object đã
+    // tạo hoặc Void)
     @POST("/api/places")
     Call<Place> createPlace(@Body Place.Request request);
 
@@ -38,4 +38,7 @@ public interface PlaceApiService {
 
     @PUT("/api/places/images/{id}")
     Call<Void> updatePlaceImages(@Path("id") String id, @Body PlaceImagesRequest request);
+
+    @GET("/api/places/destinations")
+    Call<com.example.berotravel20.models.DestinationResponse> getDestinations();
 }

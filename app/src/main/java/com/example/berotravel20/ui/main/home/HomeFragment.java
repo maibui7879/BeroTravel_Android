@@ -9,6 +9,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.berotravel20.R;
+import com.example.berotravel20.models.PlaceResponse;
+import java.util.List;
+import java.util.ArrayList;
+import android.content.Context;
+import android.content.SharedPreferences;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -141,6 +146,27 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    /* --- ADDED FOR SCHEDULE FEATURE --- */
+    private List<PlaceResponse.Place> filterPlacesByLocation(List<PlaceResponse.Place> places) {
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("BeroTravelPrefs",
+                android.content.Context.MODE_PRIVATE);
+        String currentTripLocation = prefs.getString("CURRENT_TRIP_LOCATION", null);
+
+        if (currentTripLocation == null || currentTripLocation.isEmpty()) {
+            return places;
+        }
+
+        List<PlaceResponse.Place> filteredList = new java.util.ArrayList<>();
+        for (PlaceResponse.Place place : places) {
+            // Simple string matching. Modify if backend provides explicit city field.
+            if (place.address != null && place.address.contains(currentTripLocation)) {
+                filteredList.add(place);
+            }
+        }
+        return filteredList;
+    }
+    /* ---------------------------------- */
+
     private void fetchPlaces() {
         // Fetch mixed/popular places (no category filter)
         apiService.getPlaces(50, null).enqueue(new retrofit2.Callback<com.example.berotravel20.models.PlaceResponse>() {
@@ -149,7 +175,9 @@ public class HomeFragment extends Fragment {
                     retrofit2.Response<com.example.berotravel20.models.PlaceResponse> response) {
                 checkRefreshState();
                 if (response.isSuccessful() && response.body() != null) {
-                    HomePlaceAdapter adapter = new HomePlaceAdapter(response.body().data, this::navigateToPlace);
+                    List<PlaceResponse.Place> allPlaces = response.body().data;
+                    List<PlaceResponse.Place> filteredPlaces = filterPlacesByLocation(allPlaces);
+                    HomePlaceAdapter adapter = new HomePlaceAdapter(filteredPlaces, this::navigateToPlace);
                     rvPopularPlaces.setAdapter(adapter);
                 }
             }
@@ -179,7 +207,9 @@ public class HomeFragment extends Fragment {
                             retrofit2.Response<com.example.berotravel20.models.PlaceResponse> response) {
                         checkRefreshState();
                         if (response.isSuccessful() && response.body() != null) {
-                            HomePlaceAdapter adapter = new HomePlaceAdapter(response.body().data,
+                            List<PlaceResponse.Place> allHotels = response.body().data;
+                            List<PlaceResponse.Place> filteredHotels = filterPlacesByLocation(allHotels);
+                            HomePlaceAdapter adapter = new HomePlaceAdapter(filteredHotels,
                                     this::navigateToPlace);
                             rvHotels.setAdapter(adapter);
                         }
@@ -211,7 +241,9 @@ public class HomeFragment extends Fragment {
                             retrofit2.Response<com.example.berotravel20.models.PlaceResponse> response) {
                         checkRefreshState();
                         if (response.isSuccessful() && response.body() != null) {
-                            HomePlaceAdapter adapter = new HomePlaceAdapter(response.body().data,
+                            List<PlaceResponse.Place> allHomestays = response.body().data;
+                            List<PlaceResponse.Place> filteredHomestays = filterPlacesByLocation(allHomestays);
+                            HomePlaceAdapter adapter = new HomePlaceAdapter(filteredHomestays,
                                     this::navigateToPlace);
                             rvHomestays.setAdapter(adapter);
                         }

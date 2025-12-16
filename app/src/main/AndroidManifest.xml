@@ -36,9 +36,7 @@
             android:name=".ui.common.BaseActivity"
             android:exported="false" />
 
-        <activity
-            android:name=".ui.auth.LoginActivity"
-            android:exported="false" />
+
 
         <activity
             android:name=".ui.auth.AuthActivity"
@@ -47,6 +45,11 @@
         <activity
             android:name=".ui.map.MapActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.main.journey.JourneyDetailActivity"
+            android:exported="false" />
+
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
