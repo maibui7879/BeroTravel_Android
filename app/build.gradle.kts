@@ -81,13 +81,9 @@ dependencies {
     // Utils
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0") // để đặt Level.HEADERS là để nó "quay phim" ít lại:))
-
 
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
 }

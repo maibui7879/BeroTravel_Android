@@ -25,8 +25,8 @@ public class RetrofitClient {
 
         // Cấu hình OkHttpClient với Interceptor (Lấy từ code ApiClient của bạn)
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(300, TimeUnit.SECONDS)
-                .readTimeout(300, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {

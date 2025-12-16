@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- BACKGROUND -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/rectangle"
+        android:scaleType="centerCrop" />
+
+    <!-- SIGN UP CARD -->
+    <LinearLayout
+        android:layout_width="350dp"
+        android:layout_height="520dp"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/bg_signup_container">
+
+        <!-- TITLE -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bắt đầu hành trình của bạn\nngay hôm nay"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:textColor="#336749"
+            android:gravity="center"
+            android:lineSpacingExtra="6dp" />
+
+        <!-- NAME -->
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="36dp"
+            android:hint="Họ và tên"
+            android:paddingHorizontal="16dp"
+            android:textColor="#336749"
+            android:textColorHint="#99336749"
+            android:background="@drawable/bg_input_focus"/>
+
+        <!-- EMAIL -->
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:paddingHorizontal="16dp"
+            android:textColor="#336749"
+            android:textColorHint="#99336749"
+            android:background="@drawable/bg_input_focus"/>
+
+        <!-- PASSWORD -->
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:hint="Mật khẩu"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="#336749"
+            android:textColorHint="#99336749"
+            android:background="@drawable/bg_input_focus"/>
+
+        <!-- SIGN UP BUTTON -->
+        <LinearLayout
+            android:id="@+id/btnSignUp"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="32dp"
+            android:gravity="center"
+            android:background="@drawable/bg_button_signup"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sign Up"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- SIGN IN -->
+        <TextView
+            android:id="@+id/tvGoToLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="Đã có tài khoản? Sign In"
+            android:textColor="#336749"
+            android:textSize="13sp"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+</FrameLayout>

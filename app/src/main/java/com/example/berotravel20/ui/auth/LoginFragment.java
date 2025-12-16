@@ -1,5 +1,6 @@
 package com.example.berotravel20.ui.auth;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -22,21 +23,25 @@ import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.ui.main.MainActivity;
 import com.example.berotravel20.viewmodel.AuthViewModel;
 
+import com.example.berotravel20.data.local.TokenManager;
+
 //Đây là test api. khi làm nhớ sửa lại
 public class LoginFragment extends Fragment {
 
     private AuthViewModel authViewModel;
     private EditText etEmail, etPassword;
-    private Button btnLogin;
+    //Đổi từ Button thành View (vì bên XML nó là LinearLayout)
+    private View btnLogin;
     private ProgressBar progressBar;
     private TextView tvGoToRegister;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_login, container, false);
+        return inflater.inflate(R.layout.fragment_sign_in, container, false);
     }
 
+    @SuppressLint("WrongViewCast")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -71,39 +76,46 @@ public class LoginFragment extends Fragment {
         // 5. Chuyển sang màn hình Đăng ký
         tvGoToRegister.setOnClickListener(v -> {
             if (getActivity() instanceof AuthActivity) {
-                // ((AuthActivity) getActivity()).switchFragment(new RegisterFragment());
-                Toast.makeText(getContext(), "Chuyển sang đăng ký (Cần tạo RegisterFragment)", Toast.LENGTH_SHORT).show();
+                // Gọi hàm loadFragment để chuyển trang
+                ((AuthActivity) getActivity()).loadFragment(new RegisterFragment());
             }
         });
     }
 
     private void observeViewModel() {
-        // A. Lắng nghe kết quả login thành công
+// A. Lắng nghe kết quả login thành công
         authViewModel.getLoginResponse().observe(getViewLifecycleOwner(), response -> {
-            if (response != null) {
-                // Login thành công!
+            if (response != null && response.token != null) {
+                // 1. Lưu Token vào máy
+                TokenManager.getInstance(requireContext()).saveUserSession(response.token, response.name);
+
+                // 2. Thông báo login thành công
                 Toast.makeText(getContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
-                // Lưu token vào SharedPreferences (Ví dụ)
-                // SharedPreferencesUtils.saveToken(getContext(), response.token);
-
-                // Chuyển sang MainActivity
+                // 3. Chuyển sang màn hình chính (MainActivity)
                 Intent intent = new Intent(getActivity(), MainActivity.class);
+                // Dòng này để xóa các màn hình cũ, user bấm Back sẽ không quay lại màn Login nữa
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
 
-                // Đóng AuthActivity để user không back lại được
+                // Đóng AuthActivity
                 if (getActivity() != null) getActivity().finish();
+            } else {
+                // Đề phòng server trả về null
+                Toast.makeText(getContext(), "Lỗi: Không nhận được token", Toast.LENGTH_SHORT).show();
             }
         });
 
         // B. Lắng nghe trạng thái loading
         authViewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            if (isLoading) {
-                progressBar.setVisibility(View.VISIBLE);
-                btnLogin.setEnabled(false);
-            } else {
-                progressBar.setVisibility(View.GONE);
-                btnLogin.setEnabled(true);
+            if (progressBar != null) {
+                if (isLoading) {
+                    progressBar.setVisibility(View.VISIBLE);
+                    btnLogin.setEnabled(false);
+                } else {
+                    progressBar.setVisibility(View.GONE);
+                    btnLogin.setEnabled(true);
+                }
             }
         });
 
