@@ -16,13 +16,12 @@ import com.example.berotravel20.ui.main.home.HomeFragment;
 import com.example.berotravel20.ui.map.MapActivity; // Import đúng MapActivity
 import com.example.berotravel20.ui.main.profile.AccountFragment;
 import com.example.berotravel20.ui.main.setting.SettingFragment;
-import com.example.berotravel20.ui.main.journey.JourneyFragment;
 
 public class BaseActivity extends AppCompatActivity {
 
-    LinearLayout navHome, navMap, navAI, navSetting, navAccount, navJourney;
-    ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount, iconJourney;
-    TextView textHome, textMap, textAI, textSetting, textAccount, textJourney;
+    LinearLayout navHome, navMap, navAI, navSetting, navAccount;
+    ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount;
+    TextView textHome, textMap, textAI, textSetting, textAccount;
     View bottomNavbar;
 
     @Override
@@ -67,10 +66,6 @@ public class BaseActivity extends AppCompatActivity {
         textAI = findViewById(R.id.text_ai);
         textSetting = findViewById(R.id.text_setting);
         textAccount = findViewById(R.id.text_account);
-
-        navJourney = findViewById(R.id.nav_journey);
-        iconJourney = findViewById(R.id.icon_journey);
-        textJourney = findViewById(R.id.text_journey);
     }
 
     private void setupClickListeners() {
@@ -105,11 +100,6 @@ public class BaseActivity extends AppCompatActivity {
             setSelected(navAccount);
             replaceFragment(new AccountFragment());
         });
-
-        navJourney.setOnClickListener(v -> {
-            setSelected(navJourney);
-            replaceFragment(new JourneyFragment());
-        });
     }
 
     /** Đổi màu icon & text khi chọn tab */
@@ -120,7 +110,6 @@ public class BaseActivity extends AppCompatActivity {
         resetTab(iconAI, textAI);
         resetTab(iconSetting, textSetting);
         resetTab(iconAccount, textAccount);
-        resetTab(iconJourney, textJourney);
 
         // set màu active cho tab được chọn
         if (selected == navHome)
@@ -133,8 +122,6 @@ public class BaseActivity extends AppCompatActivity {
             setActive(iconSetting, textSetting);
         if (selected == navAccount)
             setActive(iconAccount, textAccount);
-        if (selected == navJourney)
-            setActive(iconJourney, textJourney);
     }
 
     private void resetTab(ImageView icon, TextView label) {

@@ -232,24 +232,11 @@
                 android:nestedScrollingEnabled="false"/>
 
             <!-- Bottom Actions -->
-            <Button
-                android:id="@+id/btn_add_to_schedule"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="8dp"
-                android:text="Thêm vào lịch trình"
-                android:backgroundTint="#FF9800"
-                android:textColor="@color/white"
-                app:icon="@android:drawable/ic_menu_agenda"
-                app:iconTint="@color/white"
-                app:cornerRadius="24dp"
-                android:padding="12dp"/>
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginTop="32dp">
 
                 <Button
                     android:id="@+id/btn_direction"

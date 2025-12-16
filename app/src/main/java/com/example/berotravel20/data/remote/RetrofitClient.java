@@ -18,20 +18,15 @@ public class RetrofitClient {
 
     private static RetrofitClient instance = null;
     private Retrofit retrofit;
-    private static final String BASE_URL = "http://10.0.2.2:5001/";
+    private static final String BASE_URL = "http://10.0.2.2:5000/";
 
     // Constructor Private
     private RetrofitClient(Context context) {
 
-        // Cấu hình logging
-        okhttp3.logging.HttpLoggingInterceptor logging = new okhttp3.logging.HttpLoggingInterceptor();
-        logging.setLevel(okhttp3.logging.HttpLoggingInterceptor.Level.BODY);
-
         // Cấu hình OkHttpClient với Interceptor (Lấy từ code ApiClient của bạn)
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .addInterceptor(logging) // Add logging interceptor first
+                .connectTimeout(300, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
@@ -39,9 +34,8 @@ public class RetrofitClient {
                         Request.Builder builder = original.newBuilder();
 
                         // Lấy token trực tiếp từ SharedPreferences
-                        // Lưu ý: Đảm bảo tên file "BeroTravelPrefs" và key "auth_token" khớp với lúc
-                        // bạn lưu khi Login
-                        SharedPreferences prefs = context.getSharedPreferences("BeroTravelPrefs", Context.MODE_PRIVATE);
+                        // Lưu ý: Đảm bảo tên file "MyPrefs" và key "auth_token" khớp với lúc bạn lưu khi Login
+                        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                         String token = prefs.getString("auth_token", null);
 
                         // Nếu có token thì gắn vào Header
@@ -79,35 +73,12 @@ public class RetrofitClient {
     }
 
     // --- Danh sách API Service ---
-    public AuthApiService getAuthApi() {
-        return retrofit.create(AuthApiService.class);
-    }
-
-    public UserApiService getUserApi() {
-        return retrofit.create(UserApiService.class);
-    }
-
-    public PlaceApiService getPlaceApi() {
-        return retrofit.create(PlaceApiService.class);
-    }
-
-    public PlaceStatusApiService getPlaceStatusApi() {
-        return retrofit.create(PlaceStatusApiService.class);
-    }
-
-    public ReviewApiService getReviewApi() {
-        return retrofit.create(ReviewApiService.class);
-    }
-
-    public VoteApiService getVoteApi() {
-        return retrofit.create(VoteApiService.class);
-    }
-
-    public BookingApiService getBookingApi() {
-        return retrofit.create(BookingApiService.class);
-    }
-
-    public JourneyApiService getJourneyApi() {
-        return retrofit.create(JourneyApiService.class);
-    }
+    public AuthApiService getAuthApi() { return retrofit.create(AuthApiService.class); }
+    public UserApiService getUserApi() { return retrofit.create(UserApiService.class); }
+    public PlaceApiService getPlaceApi() { return retrofit.create(PlaceApiService.class); }
+    public PlaceStatusApiService getPlaceStatusApi() { return retrofit.create(PlaceStatusApiService.class); }
+    public ReviewApiService getReviewApi() { return retrofit.create(ReviewApiService.class); }
+    public VoteApiService getVoteApi() { return retrofit.create(VoteApiService.class); }
+    public BookingApiService getBookingApi() { return retrofit.create(BookingApiService.class); }
+    public JourneyApiService getJourneyApi() { return retrofit.create(JourneyApiService.class); }
 }

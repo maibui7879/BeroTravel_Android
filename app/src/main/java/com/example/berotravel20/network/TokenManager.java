@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 public class TokenManager {
-    private static final String PREF_NAME = "BeroTravelPrefs";
-    private static final String KEY_TOKEN = "auth_token";
+    private static final String PREF_NAME = "BeroPrefs";
+    private static final String KEY_TOKEN = "jwt_token";
     private static final String KEY_USER_ID = "user_id";
 
     private SharedPreferences prefs;

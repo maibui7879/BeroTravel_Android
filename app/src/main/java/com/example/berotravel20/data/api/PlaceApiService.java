@@ -9,24 +9,27 @@ import retrofit2.http.*;
 
 public interface PlaceApiService {
 
-    // 1. Lấy tất cả (GET /places) -> Trả về PlaceResponse
+    // 1. Lấy tất cả
     @GET("/api/places")
     Call<PlaceResponse> getAllPlaces();
 
-    // 2. Tìm kiếm (GET /api/places?...) -> Trả về PlaceResponse
-    @GET("/api/places/search/nearby")
-    Call<PlaceResponse> searchNearby(
-            @Query("latitude") double lat,
-            @Query("longitude") double lng,
-            @Query("radius") Integer radius,
-            @Query("name") String name, // Keyword tìm theo tên
-            @Query("category") String category);
+    // 2. [CẬP NHẬT] Tìm kiếm Nearby (Thêm param 'page')
+        @GET("/api/places/search/nearby")
+        Call<PlaceResponse> searchNearby(
+                @Query("latitude") double lat,
+                @Query("longitude") double lng,
+                @Query("radius") Integer radius,
+                @Query("name") String name,
+                @Query("category") String category,
+                @Query("page") Integer page,  // Dùng Integer để có thể truyền null
+                @Query("limit") Integer limit // Dùng Integer để có thể truyền null
+        );
+
+    // --- CÁC API KHÁC GIỮ NGUYÊN ---
 
     @GET("/api/places/{id}")
     Call<Place> getPlace(@Path("id") String id);
 
-    // ... Các API POST/PUT/DELETE giữ nguyên (vì thường backend trả về Object đã
-    // tạo hoặc Void)
     @POST("/api/places")
     Call<Place> createPlace(@Body Place.Request request);
 
@@ -38,7 +41,4 @@ public interface PlaceApiService {
 
     @PUT("/api/places/images/{id}")
     Call<Void> updatePlaceImages(@Path("id") String id, @Body PlaceImagesRequest request);
-
-    @GET("/api/places/destinations")
-    Call<com.example.berotravel20.models.DestinationResponse> getDestinations();
 }

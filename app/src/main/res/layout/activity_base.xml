@@ -140,34 +140,6 @@
                 android:paddingTop="4dp"/>
         </LinearLayout>
 
-        <!-- SCHEDULE (Lịch trình) -->
-        <LinearLayout
-            android:id="@+id/nav_journey"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:foreground="?android:attr/selectableItemBackground"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="6dp">
-
-            <ImageView
-                android:id="@+id/icon_journey"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/map_icon"
-                app:tint="@color/nav_default" />
-
-            <TextView
-                android:id="@+id/text_journey"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lịch trình"
-                android:textSize="12sp"
-                android:textColor="@color/nav_default"
-                android:paddingTop="4dp"/>
-        </LinearLayout>
-
         <!-- ACCOUNT -->
         <LinearLayout
             android:id="@+id/nav_account"
