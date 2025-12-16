@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.adapters.FavoriteAdapter; // Import Adapter mới
 import com.example.berotravel20.data.local.TokenManager;
+import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.viewmodel.ProfileViewModel;
 
@@ -126,21 +127,14 @@ public class AccountFragment extends Fragment {
     }
 
     private void showEditProfileDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("Cập nhật Bio");
+        // Lấy User hiện tại từ ViewModel (nếu có)
+        User currentUser = viewModel.getUser().getValue();
 
-        final EditText input = new EditText(requireContext());
-        input.setHint("Nhập giới thiệu về bạn");
-        if (tvUserBio.getText() != null) input.setText(tvUserBio.getText());
-        builder.setView(input);
-
-        builder.setPositiveButton("Lưu", (dialog, which) -> {
-            String newBio = input.getText().toString();
-            // Gọi ViewModel update (Giữ nguyên tên cũ, chỉ sửa bio)
-            String currentName = tvUserName.getText().toString();
-            viewModel.updateProfile(currentName, newBio, "");
+        // Mở BottomSheet xịn
+        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, () -> {
+            // Callback khi sửa xong -> Load lại data mới
+            viewModel.loadUserProfile();
         });
-        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
-        builder.show();
+        bottomSheet.show(getParentFragmentManager(), "EditProfileBottomSheet");
     }
 }
