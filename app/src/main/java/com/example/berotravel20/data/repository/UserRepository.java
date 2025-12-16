@@ -4,6 +4,7 @@ import com.example.berotravel20.data.api.AuthApiService;
 import com.example.berotravel20.data.api.UserApiService;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Notification.Notification;
+import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.User.AuthPayload;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.data.remote.RetrofitClient;
@@ -50,7 +51,7 @@ public class UserRepository extends BaseRepository {
     }
 
     // Lấy danh sách các Place ID đã yêu thích
-    public void getFavorites(DataCallback<List<String>> callback) {
+    public void getFavorites(DataCallback<List<Place>> callback) {
         makeCall(userApi.getFavorites(), callback);
     }
 }

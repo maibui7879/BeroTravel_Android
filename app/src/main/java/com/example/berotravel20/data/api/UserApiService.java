@@ -1,6 +1,7 @@
 package com.example.berotravel20.data.api;
 
 import com.example.berotravel20.data.model.Notification.Notification;
+import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.User.User;
 import java.util.List;
 
@@ -35,5 +36,5 @@ public interface UserApiService {
     Call<Void> toggleFavorite(@Path("placeId") String placeId);
 
     @GET("/api/favorites")
-    Call<List<String>> getFavorites();
+    Call<List<Place>> getFavorites();
 }
