@@ -30,7 +30,7 @@ import com.example.berotravel20.viewmodel.ProfileViewModel;
 public class AccountFragment extends Fragment {
 
     private ProfileViewModel viewModel;
-    private TextView tvUserName, tvUserBio, tvFavoriteCount, tvReviewCount, tvTripCount, btnEditProfile;
+    private TextView tvUserName,tvUserEmail, tvUserBio, tvFavoriteCount, tvReviewCount, tvTripCount, btnEditProfile;
     private ImageView ivAvatar, ivCover;
     private Button btnLogout;
     private RecyclerView rvFavorites;
@@ -50,6 +50,7 @@ public class AccountFragment extends Fragment {
         ivCover = view.findViewById(R.id.ivCover);
         ivAvatar = view.findViewById(R.id.ivAvatar);
         tvUserName = view.findViewById(R.id.tvUserName);
+        tvUserEmail = view.findViewById(R.id.tvUserEmail);
         tvUserBio = view.findViewById(R.id.tvUserBio);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
 
@@ -84,7 +85,9 @@ public class AccountFragment extends Fragment {
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 tvUserName.setText(user.name);
-
+                if (user.email != null) {
+                    tvUserEmail.setText(user.email);
+                }
                 // Hiển thị Bio (Nếu null thì hiện placeholder)
                 if (user.bio != null && !user.bio.isEmpty()) {
                     tvUserBio.setText(user.bio);
@@ -127,14 +130,26 @@ public class AccountFragment extends Fragment {
     }
 
     private void showEditProfileDialog() {
-        // Lấy User hiện tại từ ViewModel (nếu có)
         User currentUser = viewModel.getUser().getValue();
+        if (currentUser == null) return;
 
-        // Mở BottomSheet xịn
-        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, () -> {
-            // Callback khi sửa xong -> Load lại data mới
-            viewModel.loadUserProfile();
+        // Mở Dialog
+        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, avatarBase64, coverBase64) -> {
+
+            // Logic chọn cái gì để gửi:
+            // 1. Nếu có ảnh mới (base64 khác null) -> Gửi base64
+            // 2. Nếu không chọn ảnh mới -> Gửi lại URL cũ
+
+            String finalAvatar = (avatarBase64 != null) ? avatarBase64 : currentUser.avatarUrl;
+            String finalCover = (coverBase64 != null) ? coverBase64 : currentUser.coverUrl;
+
+            // Ngày sinh giữ nguyên do lười làm layout =))
+            String dob = currentUser.dob;
+
+            // Gọi ViewModel
+            viewModel.updateProfile(name, bio, dob, finalAvatar, finalCover);
         });
+
         bottomSheet.show(getParentFragmentManager(), "EditProfileBottomSheet");
     }
 }

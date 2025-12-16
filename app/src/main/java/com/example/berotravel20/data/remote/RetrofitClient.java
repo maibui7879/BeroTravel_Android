@@ -11,6 +11,7 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor; //để quay phim ít lại:)
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -24,22 +25,24 @@ public class RetrofitClient {
     // Constructor Private
     private RetrofitClient(Context context) {
 
-        // Cấu hình OkHttpClient với Interceptor (Lấy từ code ApiClient của bạn)
+        // 2. Tạo bộ ghi Log (Logger)
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        // QUAN TRỌNG: Chỉ log Headers để tránh lag khi up ảnh Base64
+        logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
+                .addInterceptor(logging) // <--- 3. Gắn Logger vào đây
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
                         Request original = chain.request();
                         Request.Builder builder = original.newBuilder();
 
-                        // Lấy token trực tiếp từ SharedPreferences
-                        // Lưu ý: Đảm bảo tên file "MyPrefs" và key "auth_token" khớp với lúc bạn lưu khi Login
                         SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                         String token = prefs.getString("auth_token", null);
 
-                        // Nếu có token thì gắn vào Header
                         if (token != null) {
                             builder.header("Authorization", "Bearer " + token);
                         }
@@ -49,10 +52,9 @@ public class RetrofitClient {
                 })
                 .build();
 
-        // Khởi tạo Retrofit
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
-                .client(client) // Gắn client đã có interceptor
+                .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }

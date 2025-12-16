@@ -68,18 +68,25 @@ public class ProfileViewModel extends ViewModel {
     }
 
     // 3. Cập nhật Profile
-    public void updateProfile(String name, String bio, String dob) {
+    // Sửa hàm updateProfile nhận đủ 5 tham số
+    public void updateProfile(String name, String bio, String dob, String avatarUrlOrBase64, String coverUrlOrBase64) {
         isLoading.setValue(true);
+
         User updatedUser = new User();
         updatedUser.name = name;
         updatedUser.bio = bio;
         updatedUser.dob = dob;
 
+        // backend nhận file rồi tự convert
+        updatedUser.avatarUrl = avatarUrlOrBase64;
+        updatedUser.coverUrl = coverUrlOrBase64;
+
+        // Gọi API cũ (vẫn là updateProfile)
         repository.updateProfile(updatedUser, new DataCallback<User>() {
             @Override
             public void onSuccess(User data) {
                 isLoading.setValue(false);
-                user.setValue(data); // Cập nhật lại UI với data mới
+                user.setValue(data); // Cập nhật lại giao diện với data mới từ server trả về
             }
 
             @Override

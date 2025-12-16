@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.model.User.User;
+import com.example.berotravel20.utils.ImageUtils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 public class EditProfileBottomSheet extends BottomSheetDialogFragment {
@@ -25,41 +26,41 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
     private EditText etName, etBio;
     private ImageView ivAvatar, ivCover;
     private Button btnSave;
-
-    // Biến lưu Uri ảnh tạm thời
-    private Uri avatarUri, coverUri;
     private User currentUser;
+    private OnProfileSaveListener listener;
 
-    // Interface để báo về cho AccountFragment cập nhật lại UI
-    private OnProfileUpdatedListener listener;
+    // Biến lưu chuỗi Base64 của ảnh mới (nếu có chọn)
+    private String avatarBase64 = null;
+    private String coverBase64 = null;
 
-    public interface OnProfileUpdatedListener {
-        void onProfileUpdated();
+    // Interface truyền về đủ 4 món: Tên, Bio, Ảnh 1, Ảnh 2
+    public interface OnProfileSaveListener {
+        void onSave(String name, String bio, String avatarBase64, String coverBase64);
     }
 
-    public EditProfileBottomSheet(User user, OnProfileUpdatedListener listener) {
+    public EditProfileBottomSheet(User user, OnProfileSaveListener listener) {
         this.currentUser = user;
         this.listener = listener;
     }
 
-    // Launcher chọn Avatar
+    // 1. Bộ chọn ảnh Avatar
     private final ActivityResultLauncher<String> pickAvatar = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    avatarUri = uri;
                     ivAvatar.setImageURI(uri); // Hiển thị xem trước
+                    avatarBase64 = ImageUtils.uriToBase64(requireContext(), uri); // Mã hóa luôn
                 }
             }
     );
 
-    // Launcher chọn Cover
+    // 2. Bộ chọn ảnh Bìa
     private final ActivityResultLauncher<String> pickCover = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    coverUri = uri;
-                    ivCover.setImageURI(uri); // Hiển thị xem trước
+                    ivCover.setImageURI(uri);
+                    coverBase64 = ImageUtils.uriToBase64(requireContext(), uri);
                 }
             }
     );
@@ -74,14 +75,14 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ
+        // Ánh xạ View
         etName = view.findViewById(R.id.etEditName);
         etBio = view.findViewById(R.id.etEditBio);
         ivAvatar = view.findViewById(R.id.ivEditAvatar);
         ivCover = view.findViewById(R.id.ivEditCover);
         btnSave = view.findViewById(R.id.btnSaveProfile);
 
-        // 2. Điền dữ liệu cũ vào
+        // Điền dữ liệu cũ vào để user mở ra là thấy
         if (currentUser != null) {
             etName.setText(currentUser.name);
             etBio.setText(currentUser.bio);
@@ -89,24 +90,20 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
             if (currentUser.coverUrl != null) Glide.with(this).load(currentUser.coverUrl).into(ivCover);
         }
 
-        // 3. Bắt sự kiện chọn ảnh
+        // Bắt sự kiện Click vào ảnh -> Mở thư viện chọn
         ivAvatar.setOnClickListener(v -> pickAvatar.launch("image/*"));
         ivCover.setOnClickListener(v -> pickCover.launch("image/*"));
 
-        // 4. Bắt sự kiện Lưu
+        // Bắt sự kiện nút Lưu
         btnSave.setOnClickListener(v -> {
             String newName = etName.getText().toString().trim();
             String newBio = etBio.getText().toString().trim();
 
-            // TODO: Ở đây m cần gọi ViewModel để upload Multipart
-            // Vì xử lý File Path trong Android khá loằng ngoằng,
-            // tạm thời t show Toast thông báo logic.
-
-            Toast.makeText(getContext(), "Đang cập nhật... (Cần code Multipart)", Toast.LENGTH_SHORT).show();
-
-            // Giả lập thành công để đóng Dialog
-            dismiss();
-            if (listener != null) listener.onProfileUpdated();
+            if (listener != null) {
+                // Gửi hàng về cho Fragment cha xử lý
+                listener.onSave(newName, newBio, avatarBase64, coverBase64);
+            }
+            dismiss(); // Đóng dialog
         });
     }
 }
