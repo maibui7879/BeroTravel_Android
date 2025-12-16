@@ -1,139 +1,237 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F5F5">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#FFFFFF"
-        android:gravity="center"
-        android:padding="24dp">
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/btnLogout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/ivAvatar"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/account_icon"
-            android:background="@drawable/bg_circle_green_dark"
-            android:padding="2dp"
-            android:scaleType="centerCrop"/>
-
-        <TextView
-            android:id="@+id/tvUserName"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Loading..."
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:layout_marginTop="12dp"/>
+            android:paddingBottom="20dp">
 
-        <TextView
-            android:id="@+id/tvUserEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="..."
-            android:textSize="14sp"
-            android:textColor="#666666"/>
+            <ImageView
+                android:id="@+id/ivCover"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/background"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/btnEditProfile"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chỉnh sửa hồ sơ"
-            android:textColor="#336749"
-            android:textStyle="bold"
-            android:padding="8dp"
-            android:layout_marginTop="8dp"/>
-    </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="#20000000"
+                app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:layout_marginTop="1dp"
-        android:padding="16dp"
-        android:orientation="horizontal"
-        android:weightSum="3">
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cvAvatarContainer"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="-60dp"
+                app:cardCornerRadius="60dp"
+                app:cardElevation="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/ivCover">
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/ivAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#FFFFFF"
+                    android:padding="3dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/account_icon" />
+            </androidx.cardview.widget.CardView>
+
             <TextView
-                android:id="@+id/tvFavoriteCount"
+                android:id="@+id/tvUserName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0"
+                android:layout_marginTop="12dp"
+                android:text="Tên Người Dùng"
+                android:textColor="#333333"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cvAvatarContainer" />
+
+            <TextView
+                android:id="@+id/tvUserEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="email@example.com"
+                android:textColor="#888888"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvUserName" />
+
+            <TextView
+                android:id="@+id/tvUserBio"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="Viết vài dòng giới thiệu cực ngầu ở đây..."
+                android:textColor="#666666"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvUserEmail" />
+            <TextView
+                android:id="@+id/btnEditProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_white_rounded"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="8dp"
+                android:text="Chỉnh sửa hồ sơ"
+                android:textColor="#336749"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvUserBio" />
+
+            <LinearLayout
+                android:id="@+id/layoutStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_white_rounded"
+                android:elevation="2dp"
+                android:orientation="horizontal"
+                android:paddingVertical="16dp"
+                android:weightSum="3"
+                app:layout_constraintTop_toBottomOf="@id/btnEditProfile">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvReviewCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#333333"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đánh giá"
+                        android:textColor="#888888"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTripCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#333333"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Chuyến đi"
+                        android:textColor="#888888"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvFavoriteCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#333333"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Yêu thích"
+                        android:textColor="#888888"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvFavTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp"
+                android:text="Địa điểm yêu thích"
+                android:textColor="#333333"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#333333"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Yêu thích"
-                android:textSize="12sp"
-                android:textColor="#888888"/>
-        </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@id/layoutStats" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvFavorites"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333333"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Đánh giá"
-                android:textSize="12sp"
-                android:textColor="#888888"/>
-        </LinearLayout>
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false"
+                android:paddingHorizontal="16dp"
+                app:layout_constraintTop_toBottomOf="@id/tvFavTitle"
+                tools:listitem="@android:layout/simple_list_item_1" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333333"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Chuyến đi"
-                android:textSize="12sp"
-                android:textColor="#888888"/>
-        </LinearLayout>
-    </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
     <Button
         android:id="@+id/btnLogout"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_margin="24dp"
-        android:backgroundTint="#FF4444"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/ligh_green"
         android:text="Đăng xuất"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/colorPrimaryText"
         android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

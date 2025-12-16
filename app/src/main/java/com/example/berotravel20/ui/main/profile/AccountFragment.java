@@ -16,9 +16,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide; // Nhớ thêm thư viện này
+import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
+import com.example.berotravel20.adapters.FavoriteAdapter; // Import Adapter mới
 import com.example.berotravel20.data.local.TokenManager;
 import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.viewmodel.ProfileViewModel;
@@ -26,9 +29,11 @@ import com.example.berotravel20.viewmodel.ProfileViewModel;
 public class AccountFragment extends Fragment {
 
     private ProfileViewModel viewModel;
-    private TextView tvUserName, tvUserEmail, tvFavoriteCount, btnEditProfile;
-    private ImageView ivAvatar;
+    private TextView tvUserName, tvUserBio, tvFavoriteCount, tvReviewCount, tvTripCount, btnEditProfile;
+    private ImageView ivAvatar, ivCover;
     private Button btnLogout;
+    private RecyclerView rvFavorites;
+    private FavoriteAdapter favoriteAdapter;
 
     @Nullable
     @Override
@@ -41,93 +46,101 @@ public class AccountFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // 1. Ánh xạ View
-        tvUserName = view.findViewById(R.id.tvUserName);
-        tvUserEmail = view.findViewById(R.id.tvUserEmail);
-        tvFavoriteCount = view.findViewById(R.id.tvFavoriteCount);
+        ivCover = view.findViewById(R.id.ivCover);
         ivAvatar = view.findViewById(R.id.ivAvatar);
-        btnLogout = view.findViewById(R.id.btnLogout);
+        tvUserName = view.findViewById(R.id.tvUserName);
+        tvUserBio = view.findViewById(R.id.tvUserBio);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
 
-        // 2. Setup ViewModel
-        viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        // Stats
+        tvReviewCount = view.findViewById(R.id.tvReviewCount);
+        tvTripCount = view.findViewById(R.id.tvTripCount);
+        tvFavoriteCount = view.findViewById(R.id.tvFavoriteCount);
 
-        // 3. Lắng nghe dữ liệu
+        // List Favorites
+        rvFavorites = view.findViewById(R.id.rvFavorites);
+        btnLogout = view.findViewById(R.id.btnLogout);
+
+        // 2. Setup RecyclerView
+        favoriteAdapter = new FavoriteAdapter();
+        rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvFavorites.setAdapter(favoriteAdapter);
+
+        // 3. Setup ViewModel
+        viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
         observeData();
 
-        // 4. Gọi API lấy dữ liệu ngay khi mở màn hình
-        viewModel.loadUserProfile(); // Lấy tên, email, ảnh
-        viewModel.loadUserStats();   // Lấy danh sách yêu thích để đếm số lượng
+        // 4. Load Data
+        viewModel.loadUserProfile();
+        viewModel.loadUserStats(); // Để lấy số lượng favorite
 
-        // 5. Xử lý nút Đăng xuất
+        // 5. Events
         btnLogout.setOnClickListener(v -> handleLogout());
-
-        // 6. Xử lý nút Sửa Profile
         btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
     }
 
     private void observeData() {
-        // Khi có thông tin User về -> Cập nhật UI
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 tvUserName.setText(user.name);
-                tvUserEmail.setText(user.email);
 
-                // Load ảnh Avatar (Dùng Glide)
+                // Hiển thị Bio (Nếu null thì hiện placeholder)
+                if (user.bio != null && !user.bio.isEmpty()) {
+                    tvUserBio.setText(user.bio);
+                } else {
+                    tvUserBio.setText("Chưa có giới thiệu.");
+                }
+
+                // Load Avatar
                 if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
-                    Glide.with(this)
-                            .load(user.avatarUrl)
-                            .placeholder(R.drawable.account_icon) // Ảnh mặc định
-                            .circleCrop()
-                            .into(ivAvatar);
+                    Glide.with(this).load(user.avatarUrl).placeholder(R.drawable.account_icon).into(ivAvatar);
+                }
+
+                // Load Ảnh bìa (Cover)
+                if (user.coverUrl != null && !user.coverUrl.isEmpty()) {
+                    Glide.with(this).load(user.coverUrl).placeholder(R.drawable.background).centerCrop().into(ivCover);
                 }
             }
         });
 
-        // Khi có số lượng yêu thích -> Cập nhật số
+        // Lấy danh sách favorite IDs và hiển thị lên list (Tạm thời)
+        // Vì hiện tại ViewModel chưa có LiveData cho List<String>, ta có thể chế thêm
+        // Nhưng tạm thời ta dùng số lượng count để hiển thị Stats trước.
+
         viewModel.getFavoriteCount().observe(getViewLifecycleOwner(), count -> {
             tvFavoriteCount.setText(String.valueOf(count));
+            // TODO: Khi nào có API trả về List<Place> thì update adapter ở đây
         });
 
-        // Khi có lỗi
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null) Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
-        });
+        // Mock data cho Review và Trip (Vì chưa có API)
+        tvReviewCount.setText("10");
+        tvTripCount.setText("10");
     }
 
     private void handleLogout() {
-        // Xóa Token
         TokenManager.getInstance(requireContext()).clearToken();
-
-        // Quay về màn đăng nhập
         Intent intent = new Intent(requireContext(), AuthActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
     }
 
-    // Hiển thị hộp thoại sửa tên đơn giản
     private void showEditProfileDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("Cập nhật thông tin");
+        builder.setTitle("Cập nhật Bio");
 
-        // Tạo layout cho dialog (gồm 1 ô nhập tên)
         final EditText input = new EditText(requireContext());
-        // Lấy tên hiện tại điền vào
-        if (tvUserName.getText() != null) {
-            input.setText(tvUserName.getText().toString());
-        }
+        input.setHint("Nhập giới thiệu về bạn");
+        if (tvUserBio.getText() != null) input.setText(tvUserBio.getText());
         builder.setView(input);
 
-        // Nút Đồng ý
         builder.setPositiveButton("Lưu", (dialog, which) -> {
-            String newName = input.getText().toString();
-            // Gọi ViewModel cập nhật (các trường khác để rỗng tạm thời)
-            viewModel.updateProfile(newName, "", "");
+            String newBio = input.getText().toString();
+            // Gọi ViewModel update (Giữ nguyên tên cũ, chỉ sửa bio)
+            String currentName = tvUserName.getText().toString();
+            viewModel.updateProfile(currentName, newBio, "");
         });
-
-        // Nút Hủy
         builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
-
         builder.show();
     }
 }
