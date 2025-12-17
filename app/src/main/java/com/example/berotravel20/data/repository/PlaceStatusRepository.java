@@ -3,7 +3,8 @@ package com.example.berotravel20.data.repository;
 import com.example.berotravel20.data.api.PlaceStatusApiService;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.PlaceStatus.PlaceStatus;
-import com.example.berotravel20.data.model.Place.PlaceStatusRequest;
+
+import com.example.berotravel20.data.model.PlaceStatus.PlaceStatusRequest;
 import com.example.berotravel20.data.remote.RetrofitClient;
 
 public class PlaceStatusRepository extends BaseRepository {

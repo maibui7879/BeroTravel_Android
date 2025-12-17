@@ -35,6 +35,10 @@
             android:name=".ui.common.BaseActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.auth.LoginActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true" />
         <activity

@@ -19,14 +19,15 @@ public class RetrofitClient {
     private static RetrofitClient instance = null;
     private Retrofit retrofit;
     private static final String BASE_URL = "http://10.0.2.2:5000/";
+    //"http://10.0.2.2:5000/"
 
     // Constructor Private
     private RetrofitClient(Context context) {
 
         // Cấu hình OkHttpClient với Interceptor (Lấy từ code ApiClient của bạn)
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(300, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {

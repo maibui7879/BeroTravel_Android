@@ -2,6 +2,8 @@ package com.example.berotravel20.data.model.Vote;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class Vote {
     @SerializedName("_id") public String id;
     @SerializedName("user_id") public String userId;

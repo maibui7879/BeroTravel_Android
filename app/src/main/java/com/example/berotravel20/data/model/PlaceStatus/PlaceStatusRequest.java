@@ -1,4 +1,4 @@
-package com.example.berotravel20.data.model.Place;
+package com.example.berotravel20.data.model.PlaceStatus;
 
 import com.google.gson.annotations.SerializedName;
 

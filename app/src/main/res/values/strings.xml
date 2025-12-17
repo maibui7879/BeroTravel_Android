@@ -44,4 +44,57 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+
+    <!-- Booking & Payment -->
+    <string name="booking_title">Đặt vé</string>
+    <string name="check_in_date">Ngày nhận</string>
+    <string name="check_out_date">Ngày trả</string>
+    <string name="number_of_guests">Số lượng khách</string>
+    <string name="guests_label">Khách</string>
+    <string name="book_now">Đặt ngay</string>
+    <string name="confirm_booking">Xác nhận</string>
+    <string name="payment_title">Thanh toán</string>
+    <string name="proceed_to_pay">Thanh toán</string>
+    <string name="price_per_day">Giá / ngày</string>
+    <string name="total_days">Tổng ngày</string>
+    <string name="tax">Thuế &amp; Phí</string>
+    <string name="total_price">Tổng cộng</string>
+    <string name="booking_success_title">Thành công!</string>
+    <string name="booking_success_msg">Bạn đã đặt thành công.</string>
+    <string name="review_reservation">Xem lại vé</string>
+    <string name="back_to_home">Về trang chủ</string>
+    <string name="processing_payment">Đang xử lý...</string>
+    <string name="please_wait_confirming">Vui lòng chờ xác nhận...</string>
+
+    <!-- Place Details -->
+    <string name="details_title">Chi tiết</string>
+    <string name="description_label">Mô tả</string>
+    <string name="read_more">Xem thêm</string>
+    <string name="read_less">Thu gọn</string>
+    <string name="photos_label">Hình ảnh</string>
+    <string name="see_all">Xem tất cả</string>
+    <string name="reviews_label">Đánh giá</string>
+    <string name="write_review">Viết đánh giá</string>
+    <string name="direction_button">Chỉ đường</string>
+    <string name="free_ticket">Miễn phí</string>
+    <string name="ticket_price_prefix">Vé: </string>
+    <string name="price_per_day_suffix">/ngày</string>
+
+    <!-- Dialogs -->
+    <string name="submit">Gửi</string>
+    <string name="cancel">Hủy</string>
+    <string name="review_submitted">Đã gửi đánh giá!</string>
+    <string name="booking_saved">Đã lưu đặt phòng!</string>
+    <string name="error_prefix">Lỗi: </string>
+
+    <!-- Formats & Dynamic Strings -->
+    <string name="room_guests_format">1 Phòng, %d Khách</string>
+    <string name="error_place_id_missing">Lỗi: Thiếu Place ID!</string>
+    <string name="booking_saved_success">Đã lưu đặt phòng thành công!</string>
+    <string name="guest_format">%d Khách</string>
+    <string name="days_format">%d Ngày</string>
+    <string name="mock_address">Địa chỉ mẫu, Thành phố</string>
+    <string name="enter_guests_error">Vui lòng nhập số lượng khách</string>
+    <string name="ticket_price_format">Vé vào cửa: %,.0f</string>
+
 </resources>

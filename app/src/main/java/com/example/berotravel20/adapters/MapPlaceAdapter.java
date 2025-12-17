@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button; // [QUAN TRỌNG]
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -25,7 +26,7 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     private Context context;
     private List<Place> placeList = new ArrayList<>();
 
-    // Set chứa ID các địa điểm user đã yêu thích (Dùng Set để tìm kiếm nhanh)
+    // Set chứa ID các địa điểm user đã yêu thích
     private Set<String> favoriteIds = new HashSet<>();
 
     private OnItemClickListener listener;
@@ -34,6 +35,7 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
         void onItemClick(Place place);       // Click vào item -> Move camera
         void onDirectionClick(Place place);  // Click chỉ đường -> Vẽ đường
         void onFavoriteClick(Place place);   // Click tim -> Gọi API Toggle
+        void onDetailClick(Place place);     // [MỚI] Click chi tiết -> Mở PlaceFragment
     }
 
     public MapPlaceAdapter(Context context, OnItemClickListener listener) {
@@ -41,21 +43,15 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
         this.listener = listener;
     }
 
-    /**
-     * Cập nhật danh sách ID yêu thích.
-     * Được gọi từ Activity sau khi fetch API thành công.
-     */
+    // --- CẬP NHẬT DỮ LIỆU ---
     public void setFavoriteIds(List<String> ids) {
         this.favoriteIds.clear();
         if (ids != null) {
             this.favoriteIds.addAll(ids);
         }
-        notifyDataSetChanged(); // Refresh lại toàn bộ để cập nhật icon tim
+        notifyDataSetChanged();
     }
 
-    /**
-     * Toggle cục bộ trạng thái tim (dùng để update UI ngay khi API báo thành công)
-     */
     public void toggleFavoriteLocal(String placeId) {
         if (favoriteIds.contains(placeId)) {
             favoriteIds.remove(placeId);
@@ -65,7 +61,6 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
         notifyDataSetChanged();
     }
 
-    // --- CÁC HÀM QUẢN LÝ DỮ LIỆU LIST ---
     public void setData(List<Place> list) {
         this.placeList.clear();
         if (list != null) {
@@ -98,15 +93,12 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     public void onBindViewHolder(@NonNull PlaceViewHolder holder, int position) {
         Place place = placeList.get(position);
 
-        // 1. Gán thông tin cơ bản
+        // 1. Bind Data
         if (holder.tvName != null) holder.tvName.setText(place.name);
         if (holder.tvAddress != null) holder.tvAddress.setText(place.address != null ? place.address : "Chưa có địa chỉ");
+        if (holder.tvCategory != null) holder.tvCategory.setText(CategoryUtils.getLabel(place.category));
 
-        if (holder.tvCategory != null) {
-            holder.tvCategory.setText(CategoryUtils.getLabel(place.category));
-        }
-
-        // 2. Load ảnh
+        // 2. Load Image
         if (holder.imgPlace != null) {
             if (place.imageUrl != null && !place.imageUrl.isEmpty()) {
                 Glide.with(context)
@@ -137,19 +129,11 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
         }
         if (holder.tvStatusInfo != null) holder.tvStatusInfo.setText(statusBuilder.toString());
 
-        // 4. [LOGIC TIM] Kiểm tra ID trong favoriteIds
-        // place.id là ID đã map từ "_id"
+        // 4. Favorite Logic
         boolean isFav = favoriteIds.contains(place.id);
-        if (isFav) {
-            holder.btnFavorite.setImageResource(R.drawable.ic_heart_filled);
-            // Có thể thêm tint màu đỏ nếu icon là vector trắng
-            // holder.btnFavorite.setColorFilter(ContextCompat.getColor(context, R.color.red));
-        } else {
-            holder.btnFavorite.setImageResource(R.drawable.ic_heart);
-            // holder.btnFavorite.clearColorFilter();
-        }
+        holder.btnFavorite.setImageResource(isFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
 
-        // 5. Sự kiện Click
+        // 5. Click Events
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onItemClick(place);
         });
@@ -160,10 +144,16 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             });
         }
 
-        // Sự kiện bấm tim
         if (holder.btnFavorite != null) {
             holder.btnFavorite.setOnClickListener(v -> {
                 if (listener != null) listener.onFavoriteClick(place);
+            });
+        }
+
+        // [MỚI] Click Detail
+        if (holder.btnDetail != null) {
+            holder.btnDetail.setOnClickListener(v -> {
+                if (listener != null) listener.onDetailClick(place);
             });
         }
     }
@@ -174,9 +164,10 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     }
 
     public static class PlaceViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgPlace, btnFavorite; // btnFavorite là ImageView (trái tim)
+        ImageView imgPlace, btnFavorite;
         TextView tvName, tvAddress, tvStatusInfo, tvCategory;
-        View btnDirection; // Nút chỉ đường
+        View btnDirection;
+        Button btnDetail; // [MỚI] Nút Chi tiết
 
         public PlaceViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -185,9 +176,11 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvStatusInfo = itemView.findViewById(R.id.tvStatusInfo);
             tvCategory = itemView.findViewById(R.id.tvCategory);
+            btnDirection = itemView.findViewById(R.id.btnDirections);
+            btnFavorite = itemView.findViewById(R.id.btnFavorite);
 
-            btnDirection = itemView.findViewById(R.id.btnDirections); // ID khớp XML
-            btnFavorite = itemView.findViewById(R.id.btnFavorite);     // ID khớp XML
+            // [MỚI] Ánh xạ btnDetail (ID phải trùng với XML item_place_result)
+            btnDetail = itemView.findViewById(R.id.btnDetail);
         }
     }
 }

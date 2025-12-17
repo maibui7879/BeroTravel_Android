@@ -1,7 +1,8 @@
 package com.example.berotravel20.data.api;
 
 import com.example.berotravel20.data.model.PlaceStatus.PlaceStatus;
-import com.example.berotravel20.data.model.Place.PlaceStatusRequest;
+import com.example.berotravel20.data.model.PlaceStatus.PlaceStatusRequest;
+
 
 import retrofit2.Call;
 import retrofit2.http.*;

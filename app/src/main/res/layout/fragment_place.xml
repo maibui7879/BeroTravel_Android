@@ -1,14 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.main.place.PlaceFragment">
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:clickable="true"
+    android:focusable="true">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <ProgressBar
+        android:id="@+id/pb_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:elevation="10dp"/>
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        android:elevation="4dp"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:titleTextColor="@color/black">
 
-</FrameLayout>
+        <TextView
+            android:id="@+id/tv_toolbar_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Chi tiết"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"/>
+    </androidx.appcompat.widget.Toolbar>
+
+    <ScrollView
+        android:id="@+id/layout_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="invisible">
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
+            <ImageView android:id="@+id/img_header" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:src="@android:color/darker_gray" />
+            <ImageButton android:id="@+id/btn_favorite" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="top|end" android:layout_margin="16dp" android:background="@drawable/circle_bg_translucent" android:padding="12dp" android:src="@drawable/ic_heart" android:scaleType="fitCenter"/>
+        </androidx.cardview.widget.CardView>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+            <TextView android:id="@+id/tv_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="..." android:textSize="22sp" android:textStyle="bold" android:textColor="@color/black"/>
+            <TextView android:id="@+id/tv_price" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp">
+            <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@android:drawable/ic_menu_mylocation" app:tint="#757575"/>
+            <TextView android:id="@+id/tv_location" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textSize="14sp" android:textColor="#757575" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/description_label" android:textColor="@color/black" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="24dp"/>
+        <TextView android:id="@+id/tv_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="..." android:textColor="#424242" android:layout_marginTop="8dp" android:lineSpacingMultiplier="1.2"/>
+        <TextView android:id="@+id/tv_read_more" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/read_more" android:textColor="@color/teal_700" android:textStyle="bold" android:layout_marginTop="4dp" android:visibility="gone"/>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="24dp" android:gravity="center_vertical">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/photos_label" android:textColor="@color/black" android:textSize="18sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/tv_see_all_photos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/see_all" android:textColor="@color/teal_700"/>
+        </LinearLayout>
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rv_photos" android:layout_width="match_parent" android:layout_height="120dp" android:orientation="horizontal" android:layout_marginTop="12dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rv_reviews" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:nestedScrollingEnabled="false"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="32dp"
+            android:weightSum="2"> <Button
+            android:id="@+id/btn_direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/direction_button"
+            android:backgroundTint="#4CAF50"
+            android:textColor="@color/white"
+            android:padding="12dp"
+            android:layout_marginEnd="4dp"
+            app:icon="@android:drawable/ic_menu_directions"
+            app:iconTint="@color/white"
+            app:cornerRadius="24dp"/>
+
+            <Button
+                android:id="@+id/btn_booking"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/book_now"
+                android:backgroundTint="@color/teal_700"
+                android:textColor="@color/white"
+                android:padding="12dp"
+                android:layout_marginStart="4dp"
+                app:cornerRadius="24dp"/>
+
+        </LinearLayout>
+        <Space android:layout_width="match_parent" android:layout_height="80dp"/>
+
+    </LinearLayout>
+    </ScrollView>
+</LinearLayout>

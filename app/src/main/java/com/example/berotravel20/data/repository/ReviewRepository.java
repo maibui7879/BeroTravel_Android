@@ -25,4 +25,7 @@ public class ReviewRepository extends BaseRepository {
     public void deleteReview(String id, DataCallback<Void> callback) {
         makeCall(api.deleteReview(id), callback);
     }
+    public void getPlaceRating(String placeId, DataCallback<Review.RatingResponse> callback) {
+        makeCall(api.getPlaceRating(placeId), callback);
+    }
 }

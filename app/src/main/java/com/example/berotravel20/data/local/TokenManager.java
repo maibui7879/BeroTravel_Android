@@ -9,7 +9,7 @@ public class TokenManager {
     private static final String KEY_USERNAME = "user_name";
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
-
+    private static final String KEY_USER_ID = "user_id";
     private static TokenManager instance;
 
     private TokenManager(Context context) {
@@ -47,7 +47,9 @@ public class TokenManager {
         // Mặc định trả về "Bạn" nếu không tìm thấy tên
         return prefs.getString(KEY_USERNAME, "Bạn");
     }
-
+    public String getUserId() {
+        return prefs.getString(KEY_USER_ID, null);
+    }
     public void clearSession() {
         editor.remove(KEY_TOKEN);
         editor.remove(KEY_USERNAME);

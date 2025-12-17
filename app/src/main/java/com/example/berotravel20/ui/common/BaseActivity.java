@@ -1,6 +1,6 @@
 package com.example.berotravel20.ui.common;
 
-import android.content.Intent; // Nhớ import Intent
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -9,19 +9,23 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.example.berotravel20.R;
-import com.example.berotravel20.ui.main.ai.AIFragment;
 import com.example.berotravel20.ui.main.home.HomeFragment;
-import com.example.berotravel20.ui.map.MapActivity; // Import đúng MapActivity
+import com.example.berotravel20.ui.main.place.PlaceFragment;
+import com.example.berotravel20.ui.map.MapActivity;
 import com.example.berotravel20.ui.main.profile.AccountFragment;
-import com.example.berotravel20.ui.main.setting.SettingFragment;
+// Đảm bảo bạn đã tạo các Fragment dưới đây hoặc thay thế bằng Fragment tương ứng
+import com.example.berotravel20.ui.main.journey.JourneyFragment;
+import com.example.berotravel20.ui.main.booking.BookingHistory;
+import com.example.berotravel20.ui.main.notification.NotificationFragment;
 
 public class BaseActivity extends AppCompatActivity {
 
-    LinearLayout navHome, navMap, navAI, navSetting, navAccount;
-    ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount;
-    TextView textHome, textMap, textAI, textSetting, textAccount;
+    private LinearLayout navHome, navMap, navItinerary, navBooking, navNotifications, navAccount;
+    private ImageView iconHome, iconMap, iconItinerary, iconBooking, iconNotifications, iconAccount;
+    private TextView textHome, textMap, textItinerary, textBooking, textNotifications, textAccount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,57 +35,93 @@ public class BaseActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
 
-        // Load fragment mặc định là Home
-        setSelected(navHome);
-        replaceFragment(new HomeFragment());
+        // Xử lý Intent (Nếu từ Map quay về xem chi tiết địa điểm)
+        if (handleIntent(getIntent())) {
+            resetTabColors();
+        } else {
+            // Mặc định load Home
+            setSelected(navHome);
+            replaceFragment(new HomeFragment());
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private boolean handleIntent(Intent intent) {
+        if (intent != null && "PLACE_DETAIL".equals(intent.getStringExtra("NAVIGATE_TO"))) {
+            String placeId = intent.getStringExtra("PLACE_ID");
+            if (placeId != null) {
+                openPlaceDetailFragment(placeId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void openPlaceDetailFragment(String placeId) {
+        PlaceFragment fragment = PlaceFragment.newInstance(placeId);
+        navigateToDetail(fragment);
     }
 
     private void initViews() {
+        // Ánh xạ 6 mục Navbar mới
         navHome = findViewById(R.id.nav_home);
         navMap = findViewById(R.id.nav_map);
-        navAI = findViewById(R.id.nav_ai);
-        navSetting = findViewById(R.id.nav_setting);
+        navItinerary = findViewById(R.id.nav_itinerary);
+        navBooking = findViewById(R.id.nav_booking);
+        navNotifications = findViewById(R.id.nav_notifications);
         navAccount = findViewById(R.id.nav_account);
 
-        iconHome = findViewById(R.id.icon_home);
-        iconMap = findViewById(R.id.icon_map);
-        iconAI = findViewById(R.id.icon_ai);
-        iconSetting = findViewById(R.id.icon_setting);
-        iconAccount = findViewById(R.id.icon_account);
+        // Ánh xạ Icons và TextViews (Tự động lấy theo cấu trúc phân cấp trong XML)
+        iconHome = navHome.findViewById(R.id.icon_home);
+        textHome = navHome.findViewById(R.id.text_home);
 
-        textHome = findViewById(R.id.text_home);
-        textMap = findViewById(R.id.text_map);
-        textAI = findViewById(R.id.text_ai);
-        textSetting = findViewById(R.id.text_setting);
-        textAccount = findViewById(R.id.text_account);
+        iconMap = navMap.findViewById(R.id.icon_map);
+        textMap = navMap.findViewById(R.id.text_map);
+
+        iconItinerary = navItinerary.findViewById(R.id.icon_itinerary);
+        textItinerary = navItinerary.findViewById(R.id.text_itinerary);
+
+        iconBooking = navBooking.findViewById(R.id.icon_booking);
+        textBooking = navBooking.findViewById(R.id.text_booking);
+
+        iconNotifications = navNotifications.findViewById(R.id.icon_notifications);
+        textNotifications = navNotifications.findViewById(R.id.text_notifications);
+
+        iconAccount = navAccount.findViewById(R.id.icon_account);
+        textAccount = navAccount.findViewById(R.id.text_account);
     }
 
     private void setupClickListeners() {
-
         navHome.setOnClickListener(v -> {
             setSelected(navHome);
             replaceFragment(new HomeFragment());
         });
 
-        // --- SỬA ĐỔI Ở ĐÂY ---
         navMap.setOnClickListener(v -> {
-            // Không gọi setSelected(navMap) vì ta sẽ rời khỏi màn hình này
-            // Không gọi replaceFragment
-
-            // Chuyển sang MapActivity riêng biệt
+            // Map thường dùng Activity riêng để xử lý bản đồ nặng
             Intent intent = new Intent(BaseActivity.this, MapActivity.class);
             startActivity(intent);
         });
-        // ---------------------
 
-        navAI.setOnClickListener(v -> {
-            setSelected(navAI);
-            replaceFragment(new AIFragment());
+        navItinerary.setOnClickListener(v -> {
+            setSelected(navItinerary);
+            replaceFragment(new JourneyFragment());
         });
 
-        navSetting.setOnClickListener(v -> {
-            setSelected(navSetting);
-            replaceFragment(new SettingFragment());
+        navBooking.setOnClickListener(v -> {
+            setSelected(navBooking);
+            replaceFragment(new BookingHistory());
+        });
+
+        navNotifications.setOnClickListener(v -> {
+            setSelected(navNotifications);
+            replaceFragment(new NotificationFragment());
         });
 
         navAccount.setOnClickListener(v -> {
@@ -90,38 +130,66 @@ public class BaseActivity extends AppCompatActivity {
         });
     }
 
-    /** Đổi màu icon & text khi chọn tab */
+    /** Quản lý UI: Đổi màu tab đang được chọn sang Teal_700 */
     private void setSelected(View selected) {
-        // reset tất cả về màu mặc định
+        resetTabColors();
+
+        if (selected == navHome) setActive(iconHome, textHome);
+        else if (selected == navItinerary) setActive(iconItinerary, textItinerary);
+        else if (selected == navBooking) setActive(iconBooking, textBooking);
+        else if (selected == navNotifications) setActive(iconNotifications, textNotifications);
+        else if (selected == navAccount) setActive(iconAccount, textAccount);
+        // Lưu ý: navMap không setSelected ở đây vì nó mở Activity khác
+    }
+
+    private void resetTabColors() {
         resetTab(iconHome, textHome);
         resetTab(iconMap, textMap);
-        resetTab(iconAI, textAI);
-        resetTab(iconSetting, textSetting);
+        resetTab(iconItinerary, textItinerary);
+        resetTab(iconBooking, textBooking);
+        resetTab(iconNotifications, textNotifications);
         resetTab(iconAccount, textAccount);
-
-        // set màu active cho tab được chọn
-        if (selected == navHome) setActive(iconHome, textHome);
-        // if (selected == navMap) setActive(iconMap, textMap); // Map là Activity riêng nên ko cần set active ở đây
-        if (selected == navAI) setActive(iconAI, textAI);
-        if (selected == navSetting) setActive(iconSetting, textSetting);
-        if (selected == navAccount) setActive(iconAccount, textAccount);
     }
 
     private void resetTab(ImageView icon, TextView label) {
-        // Đảm bảo bạn có định nghĩa màu trong colors.xml hoặc dùng Color.GRAY/Color.BLACK
-        icon.setColorFilter(getColor(R.color.nav_default));
-        label.setTextColor(getColor(R.color.nav_default));
+        if (icon != null) icon.setColorFilter(getColor(R.color.nav_default));
+        if (label != null) label.setTextColor(getColor(R.color.nav_default));
     }
 
     private void setActive(ImageView icon, TextView label) {
-        icon.setColorFilter(getColor(R.color.teal_700));
-        label.setTextColor(getColor(R.color.teal_700));
+        if (icon != null) icon.setColorFilter(getColor(R.color.teal_700));
+        if (label != null) label.setTextColor(getColor(R.color.teal_700));
     }
 
-    private void replaceFragment(Fragment fragment) {
+    public void replaceFragment(Fragment fragment) {
+        getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.base_container, fragment)
                 .commit();
+    }
+
+    public void navigateToDetail(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left,
+                        R.anim.slide_in_left,
+                        R.anim.slide_out_right
+                )
+                .replace(R.id.base_container, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void showLoading() {
+        View pb = findViewById(R.id.pb_loading);
+        if (pb != null) pb.setVisibility(View.VISIBLE);
+    }
+
+    public void hideLoading() {
+        View pb = findViewById(R.id.pb_loading);
+        if (pb != null) pb.setVisibility(View.GONE);
     }
 }

@@ -15,6 +15,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,10 +34,11 @@ import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.data.repository.RouteRepository;
 import com.example.berotravel20.ui.auth.AuthActivity;
+import com.example.berotravel20.ui.common.BaseActivity; // Import BaseActivity
 import com.example.berotravel20.ui.common.RequestLoginDialog;
 import com.example.berotravel20.utils.CategoryUtils;
 import com.example.berotravel20.utils.MapUtils;
-import com.example.berotravel20.utils.ToastUtils; // [QUAN TRỌNG] Import ToastUtils
+import com.example.berotravel20.utils.ToastUtils;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -201,6 +203,12 @@ public class MapActivity extends AppCompatActivity implements
             public void onFavoriteClick(Place place) {
                 handleFavoriteToggle(place);
             }
+
+            // [MỚI] Xử lý khi bấm nút Chi tiết -> Chuyển về BaseActivity
+            @Override
+            public void onDetailClick(Place place) {
+                openPlaceDetail(place);
+            }
         });
         rvMapResults.setAdapter(placeAdapter);
 
@@ -209,6 +217,21 @@ public class MapActivity extends AppCompatActivity implements
         btnLoadMore.setVisibility(View.GONE);
 
         setupDirectionUI();
+    }
+
+    // [HÀM ĐÃ SỬA] Chuyển hướng sang BaseActivity để mở PlaceFragment
+    private void openPlaceDetail(Place place) {
+        if (place == null || place.id == null) {
+            ToastUtils.showError(this, "Không thể tải thông tin địa điểm này.");
+            return;
+        }
+
+        Intent intent = new Intent(this, BaseActivity.class);
+        intent.putExtra("NAVIGATE_TO", "PLACE_DETAIL");
+        intent.putExtra("PLACE_ID", place.id); // Chỉ gửi ID
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
     }
 
     private void setupDirectionUI() {
@@ -275,14 +298,12 @@ public class MapActivity extends AppCompatActivity implements
         favoriteRepository.toggleFavorite(place.id, new DataCallback<FavoriteResponse>() {
             @Override
             public void onSuccess(FavoriteResponse data) {
-                // [CUSTOM TOAST SUCCESS]
                 ToastUtils.showSuccess(MapActivity.this, data.message);
                 if (placeAdapter != null) placeAdapter.toggleFavoriteLocal(place.id);
             }
 
             @Override
             public void onError(String message) {
-                // [CUSTOM TOAST ERROR]
                 ToastUtils.showError(MapActivity.this, message);
             }
         });
@@ -331,7 +352,6 @@ public class MapActivity extends AppCompatActivity implements
             @Override
             public void onError(String message) {
                 hideLoading();
-                // [CUSTOM TOAST ERROR]
                 ToastUtils.showError(MapActivity.this, message);
             }
         });
@@ -341,7 +361,6 @@ public class MapActivity extends AppCompatActivity implements
         if (currentUserLocation == null) { checkAndGetLocation(); return; }
         String inputRaw = etSearch != null ? etSearch.getText().toString().trim() : "";
         if (inputRaw.length() < 2) {
-            // [CUSTOM TOAST WARNING] Thay vì Dialog
             ToastUtils.showWarning(this, "Vui lòng nhập ít nhất 2 ký tự");
             return;
         }
@@ -390,7 +409,6 @@ public class MapActivity extends AppCompatActivity implements
                         btnLoadMore.setText("Thử lại");
                         btnLoadMore.setVisibility(View.VISIBLE);
                         if (pageToLoad != null && pageToLoad > 1) currentPage--;
-                        // [CUSTOM TOAST ERROR]
                         ToastUtils.showError(MapActivity.this, "Lỗi: " + message);
                     }
                 });
@@ -468,14 +486,12 @@ public class MapActivity extends AppCompatActivity implements
 
     @Override public void onNextStep(String i) {
         runOnUiThread(() -> {
-            // [CUSTOM TOAST INFO]
             ToastUtils.show(this, "Tiếp: " + i, ToastUtils.INFO);
         });
     }
 
     @Override public void onArrived() {
         runOnUiThread(() -> {
-            // [CUSTOM TOAST SUCCESS]
             ToastUtils.showSuccess(this, "Bạn đã đến nơi!");
             stopNavigation();
         });
@@ -483,7 +499,6 @@ public class MapActivity extends AppCompatActivity implements
 
     @Override public void onRerouteNeeded() {
         runOnUiThread(() -> {
-            // [CUSTOM TOAST WARNING]
             ToastUtils.showWarning(this, "Đang định tuyến lại...");
             if (!isFetchingRoute) fetchRoute(currentDestination);
         });
@@ -541,7 +556,6 @@ public class MapActivity extends AppCompatActivity implements
             @Override public void onError(String m) {
                 isFetchingRoute = false;
                 tvDuration.setText("Lỗi");
-                // [CUSTOM TOAST ERROR]
                 ToastUtils.showError(MapActivity.this, "Lỗi tìm đường: " + m);
             }
         });

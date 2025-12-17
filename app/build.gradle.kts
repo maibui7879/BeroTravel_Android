@@ -59,8 +59,10 @@ dependencies {
     implementation("androidx.navigation:navigation-ui:2.7.0")
 
     // UI
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.cardview)
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // Version Catalog dependencies

@@ -1,0 +1,91 @@
+INFO    | Android emulator version 32.1.15.0 (build_id 10696886) (CL:N/A)
+INFO    | Found systemPath /Users/vanthe/Library/Android/sdk/system-images/android-27/google_apis/arm64-v8a/
+WARNING | cannot add library /Users/vanthe/Library/Android/sdk/emulator/qemu/darwin-aarch64/lib64/vulkan/libvulkan.dylib: failed
+INFO    | Storing crashdata in: /tmp/android-vanthe/emu-crash.db, detection is enabled
+INFO    | Duplicate loglines will be removed, if you wish to see each indiviudal line launch with the -log-nofilter flag.
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_new_posture_requested(int) ((null):0, (null))
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_dismiss_posture_selection_dialog() ((null):0, (null))
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_new_resizable_requested(PresetEmulatorSizeType) ((null):0, (null))
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_dismiss_resizable_dialog() ((null):0, (null))
+INFO    | added library /Users/vanthe/Library/Android/sdk/emulator/lib64/vulkan/libvulkan.dylib
+WARNING | *** No gRPC protection active, consider launching with the -grpc-use-jwt flag.***
+INFO    | Started GRPC server at 127.0.0.1:8554, security: Local, auth: none
+INFO    | Advertising in: /Users/vanthe/Library/Caches/TemporaryItems/avd/running/pid_15395.ini
+INFO    | Setting display: 0 configuration to: 1440x3120, dpi: 560x560 
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=540.179,755.853 gbl=540.179,755.853 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-540.179,-755.853 last=-540.179,-755.853 Δ 540.179,755.853) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=732.579,197.921 gbl=732.579,197.921 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-732.579,-197.921 last=-732.579,-197.921 Δ 732.579,197.921) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-225.919,472.634 gbl=-225.919,472.634 Released ellipse=(1x1 ∡ 0) vel=0,0 press=225.919,-472.634 last=225.919,-472.634 Δ -225.919,472.634) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-264.64,622.075 gbl=-264.64,622.075 Released ellipse=(1x1 ∡ 0) vel=0,0 press=264.64,-622.075 last=264.64,-622.075 Δ -264.64,622.075) : no target window ((null):0, (null))
+INFO    | Warning: Back buffer dpr of 1 doesn't match <NSViewBackingLayer: 0x15a210480> contents scale of 2 - updating layer to match. ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-372.631,766.666 gbl=-372.631,766.666 Released ellipse=(1x1 ∡ 0) vel=0,0 press=372.631,-766.666 last=372.631,-766.666 Δ -372.631,766.666) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-13.0698,928.34 gbl=-13.0698,928.34 Released ellipse=(1x1 ∡ 0) vel=0,0 press=13.0698,-928.34 last=13.0698,-928.34 Δ -13.0698,928.34) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-37.4967,1118.54 gbl=-37.4967,1118.54 Released ellipse=(1x1 ∡ 0) vel=0,0 press=37.4967,-1118.54 last=37.4967,-1118.54 Δ -37.4967,1118.54) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-21.56,1047.01 gbl=-21.56,1047.01 Released ellipse=(1x1 ∡ 0) vel=0,0 press=21.56,-1047.01 last=21.56,-1047.01 Δ -21.56,1047.01) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-104.767,978.168 gbl=-104.767,978.168 Released ellipse=(1x1 ∡ 0) vel=0,0 press=104.767,-978.168 last=104.767,-978.168 Δ -104.767,978.168) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-278.398,616.22 gbl=-278.398,616.22 Released ellipse=(1x1 ∡ 0) vel=0,0 press=278.398,-616.22 last=278.398,-616.22 Δ -278.398,616.22) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-87.9269,1061.81 gbl=-87.9269,1061.81 Released ellipse=(1x1 ∡ 0) vel=0,0 press=87.9269,-1061.81 last=87.9269,-1061.81 Δ -87.9269,1061.81) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-128.557,809.127 gbl=-128.557,809.127 Released ellipse=(1x1 ∡ 0) vel=0,0 press=128.557,-809.127 last=128.557,-809.127 Δ -128.557,809.127) : no target window ((null):0, (null))
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_rgbcSensorValueWidget_valueChanged() ((null):0, (null))
+INFO    | Warning: QMetaObject::connectSlotsByName: No matching signal for on_posture_valueChanged(int) ((null):0, (null))
+INFO    | Info: 
+
+GLImplementation: 
+Surface Type: OpenGL
+Surface Profile: CoreProfile
+Surface Version: 4.1
+Using Default SG Backend: no
+Using Software Dynamic GL: no
+Using Angle: no
+
+Init Parameters:
+  *  application-name Emulator 
+  *  browser-subprocess-path /Users/vanthe/Library/Android/sdk/emulator/lib64/qt/libexec/QtWebEngineProcess 
+  *  disable-features DnsOverHttpsUpgrade,ConsolidatedMovementXY,InstalledApp,BackgroundFetch,WebOTP,WebPayments,WebUSB,PictureInPicture 
+  *  disable-gpu  
+  *  disable-speech-api  
+  *  enable-features TracingServiceInProcess 
+  *  enable-threaded-compositing  
+ ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+ (2x)
+INFO    | Warning: No TLS backend is available ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+ (3x)
+INFO    | Warning: No TLS backend is available ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+INFO    | Warning: No functional TLS backend was found ((null):0, (null))
+ (2x)
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-372.214,1104.95 gbl=-372.214,1104.95 Released ellipse=(1x1 ∡ 0) vel=0,0 press=372.214,-1104.95 last=372.214,-1104.95 Δ -372.214,1104.95) : no target window ((null):0, (null))
+INFO    | Warning: Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:1346, (null))
+INFO    | Warning: Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:1346, (null))
+
+INFO    | Warning: As of March 1st, 2025, google.maps.places.Autocomplete is not available to new customers. Please use google.maps.places.PlaceAutocompleteElement instead. At this time, google.maps.places.Autocomplete is not scheduled to be discontinued, but google.maps.places.PlaceAutocompleteElement is recommended over google.maps.places.Autocomplete. While google.maps.places.Autocomplete will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.Autocomplete will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide. (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:65, (null))
+INFO    | Warning: As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide. (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:66, (null))
+INFO    | Warning: As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide. (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:66, (null))
+
+INFO    | Warning: As of March 1st, 2025, google.maps.places.Autocomplete is not available to new customers. Please use google.maps.places.PlaceAutocompleteElement instead. At this time, google.maps.places.Autocomplete is not scheduled to be discontinued, but google.maps.places.PlaceAutocompleteElement is recommended over google.maps.places.Autocomplete. While google.maps.places.Autocomplete will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.Autocomplete will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide. (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:65, (null))
+INFO    | Warning: Google Maps JavaScript API warning: RetiredVersion https://developers.google.com/maps/documentation/javascript/error-messages#retired-version (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:29, (null))
+INFO    | Warning: Google Maps JavaScript API warning: RetiredVersion https://developers.google.com/maps/documentation/javascript/error-messages#retired-version (https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyABrfflV49aFWF4Kohsf1VSx68td8f-sFY&callback=initMap&v=3.53:29, (null))
+
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-244.967,933.635 gbl=-244.967,933.635 Released ellipse=(1x1 ∡ 0) vel=0,0 press=244.967,-933.635 last=244.967,-933.635 Δ -244.967,933.635) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-190.534,931.276 gbl=-190.534,931.276 Released ellipse=(1x1 ∡ 0) vel=0,0 press=190.534,-931.276 last=190.534,-931.276 Δ -190.534,931.276) : no target window ((null):0, (null))
+INFO    | Warning: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x135f18cf0, name="EmulatorContainerClassWindow") ((null):0, (null))
+INFO    | Warning: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=-194.714,1020.82 gbl=-194.714,1020.82 Released ellipse=(1x1 ∡ 0) vel=0,0 press=194.714,-1020.82 last=194.714,-1020.82 Δ -194.714,1020.82) : no target window ((null):0, (null))
+UNSUPPORTED (log once): POSSIBLE ISSUE: unit 0 GLD_TEXTURE_INDEX_CUBE_MAP is unloadable and bound to sampler type (Float) - using zero texture because texture unloadable
