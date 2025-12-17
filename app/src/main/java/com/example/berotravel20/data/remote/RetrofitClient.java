@@ -18,7 +18,8 @@ public class RetrofitClient {
 
     private static RetrofitClient instance = null;
     private Retrofit retrofit;
-    private static final String BASE_URL = "http://10.0.2.2:5000/";
+    //private static final String BASE_URL = "http://10.0.2.2:5000/";
+    private static final String BASE_URL = "https://preformationary-untrustingly-maria.ngrok-free.dev";
 
     // Constructor Private
     private RetrofitClient(Context context) {
