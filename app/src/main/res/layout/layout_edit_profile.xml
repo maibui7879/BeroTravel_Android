@@ -97,6 +97,25 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Ngày sinh"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/etEditDob"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_input_rounded_10"
+                android:paddingHorizontal="16dp"
+                android:hint="DD/MM/YYYY"
+                android:focusable="false"
+                android:clickable="true"
+                android:inputType="date"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Giới thiệu (Bio)"
                 android:textStyle="bold"
                 android:layout_marginTop="16dp"

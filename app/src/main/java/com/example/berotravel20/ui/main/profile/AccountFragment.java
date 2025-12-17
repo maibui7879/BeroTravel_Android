@@ -22,9 +22,12 @@ import com.example.berotravel20.adapters.FavoriteAdapter;
 import com.example.berotravel20.data.local.TokenManager;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.ui.auth.AuthActivity;
+import com.example.berotravel20.ui.common.BaseActivity;
+import com.example.berotravel20.ui.common.RequestLoginDialog; // Đảm bảo đã tạo file này
 import com.example.berotravel20.viewmodel.ProfileViewModel;
 
-public class AccountFragment extends Fragment {
+// [MỚI] Implement interface để lắng nghe sự kiện từ Dialog yêu cầu đăng nhập
+public class AccountFragment extends Fragment implements RequestLoginDialog.RequestLoginListener {
 
     private ProfileViewModel viewModel;
     private TextView tvUserName, tvUserEmail, tvUserBio, tvFavoriteCount, tvReviewCount, tvTripCount, btnEditProfile;
@@ -32,6 +35,9 @@ public class AccountFragment extends Fragment {
     private Button btnLogout;
     private RecyclerView rvFavorites;
     private FavoriteAdapter favoriteAdapter;
+
+    // View chứa nội dung (để ẩn đi nếu chưa login - tùy chọn)
+    private View contentLayout;
 
     @Nullable
     @Override
@@ -43,7 +49,15 @@ public class AccountFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ View
+        // 1. KIỂM TRA ĐĂNG NHẬP NGAY LẬP TỨC
+        if (!isUserLoggedIn()) {
+            showLoginRequestDialog();
+            return; // Dừng lại, không chạy code bên dưới (tránh crash)
+        }
+
+        // --- NẾU ĐÃ LOGIN THÌ CHẠY TIẾP ---
+
+        // 2. Ánh xạ View
         ivCover = view.findViewById(R.id.ivCover);
         ivAvatar = view.findViewById(R.id.ivAvatar);
         tvUserName = view.findViewById(R.id.tvUserName);
@@ -51,25 +65,21 @@ public class AccountFragment extends Fragment {
         tvUserBio = view.findViewById(R.id.tvUserBio);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
 
-        // Stats (Thống kê)
         tvReviewCount = view.findViewById(R.id.tvReviewCount);
         tvTripCount = view.findViewById(R.id.tvTripCount);
         tvFavoriteCount = view.findViewById(R.id.tvFavoriteCount);
 
-        // List Favorites
         rvFavorites = view.findViewById(R.id.rvFavorites);
         btnLogout = view.findViewById(R.id.btnLogout);
 
-        // 2. Setup RecyclerView (Adapter hiển thị danh sách yêu thích)
+        // 3. Setup RecyclerView
         favoriteAdapter = new FavoriteAdapter();
         rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
         rvFavorites.setAdapter(favoriteAdapter);
 
-        // 3. Setup ViewModel
+        // 4. Setup ViewModel
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
-        observeData(); // <-- Hàm quan trọng nhất ở đây
-
-        // 4. Load Data (Chỉ cần gọi hàm này, nó sẽ tự gọi tiếp các hàm load stats bên trong ViewModel)
+        observeData();
         viewModel.loadUserProfile();
 
         // 5. Events
@@ -77,15 +87,44 @@ public class AccountFragment extends Fragment {
         btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
     }
 
-    // --- PHẦN QUAN TRỌNG: Lắng nghe dữ liệu thay đổi ---
+    // --- CÁC HÀM KIỂM TRA LOGIN ---
+    private boolean isUserLoggedIn() {
+        String token = TokenManager.getInstance(requireContext()).getToken();
+        return token != null && !token.isEmpty();
+    }
+
+    private void showLoginRequestDialog() {
+        RequestLoginDialog dialog = RequestLoginDialog.newInstance();
+        dialog.setListener(this); // Gắn listener vào Fragment này
+        dialog.show(getChildFragmentManager(), "RequestLoginDialog");
+    }
+
+    // Xử lý khi user bấm "Đăng nhập ngay" trên Dialog
+    @Override
+    public void onLoginClick() {
+        if (getActivity() != null) {
+            getActivity().finish(); // Đóng màn hình hiện tại để sang AuthActivity sạch sẽ
+        }
+    }
+
+    // Xử lý khi user bấm "Quay lại" trên Dialog
+    @Override
+    public void onCancelClick() {
+        // Quay về Home hoặc tab đầu tiên
+        if (getActivity() instanceof BaseActivity) {
+            // Giả sử BaseActivity có ViewPager hoặc hàm chuyển tab
+            // ((BaseActivity) getActivity()).navigateToHome();
+            // Nếu chưa có hàm đó, tạm thời không làm gì hoặc gọi:
+            // getActivity().onBackPressed();
+        }
+    }
+    // ------------------------------------
+
     private void observeData() {
-        // 1. Thông tin User (Tên, Email, Bio, Ảnh)
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 tvUserName.setText(user.name);
-                if (user.email != null) {
-                    tvUserEmail.setText(user.email);
-                }
+                if (user.email != null) tvUserEmail.setText(user.email);
 
                 if (user.bio != null && !user.bio.isEmpty()) {
                     tvUserBio.setText(user.bio);
@@ -103,31 +142,19 @@ public class AccountFragment extends Fragment {
             }
         });
 
-        // 2. Danh sách địa điểm yêu thích (Cập nhật RecyclerView)
         viewModel.getFavoritePlaces().observe(getViewLifecycleOwner(), places -> {
             if (places != null) {
-                favoriteAdapter.setPlaces(places); // Đổ dữ liệu vào Adapter
+                favoriteAdapter.setPlaces(places);
             }
         });
 
-        // 3. Số lượng Yêu thích
-        viewModel.getFavoriteCount().observe(getViewLifecycleOwner(), count -> {
-            tvFavoriteCount.setText(String.valueOf(count));
-        });
-
-        // 4. Số lượng Chuyến đi (Trip)
-        viewModel.getTripCount().observe(getViewLifecycleOwner(), count -> {
-            tvTripCount.setText(String.valueOf(count));
-        });
-
-        // 5. Số lượng Đánh giá (Review)
-        viewModel.getReviewCount().observe(getViewLifecycleOwner(), count -> {
-            tvReviewCount.setText(String.valueOf(count));
-        });
+        viewModel.getFavoriteCount().observe(getViewLifecycleOwner(), count -> tvFavoriteCount.setText(String.valueOf(count)));
+        viewModel.getTripCount().observe(getViewLifecycleOwner(), count -> tvTripCount.setText(String.valueOf(count)));
+        viewModel.getReviewCount().observe(getViewLifecycleOwner(), count -> tvReviewCount.setText(String.valueOf(count)));
     }
 
     private void handleLogout() {
-        TokenManager.getInstance(requireContext()).clearToken();
+        TokenManager.getInstance(requireContext()).clearSession();
         Intent intent = new Intent(requireContext(), AuthActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -138,11 +165,13 @@ public class AccountFragment extends Fragment {
         User currentUser = viewModel.getUser().getValue();
         if (currentUser == null) return;
 
-        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, avatarBase64, coverBase64) -> {
+        // [QUAN TRỌNG] Đảm bảo bạn ĐÃ SỬA EditProfileBottomSheet để interface nhận 5 tham số
+        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, dob, avatarBase64, coverBase64) -> {
+            // Logic xử lý khi bấm Save
             String finalAvatar = (avatarBase64 != null) ? avatarBase64 : currentUser.avatarUrl;
             String finalCover = (coverBase64 != null) ? coverBase64 : currentUser.coverUrl;
-            String dob = currentUser.dob;
 
+            // Bây giờ 'dob' là ngày sinh MỚI từ dialog
             viewModel.updateProfile(name, bio, dob, finalAvatar, finalCover);
         });
 

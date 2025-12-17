@@ -49,22 +49,36 @@
             android:id="@+id/btnFavorite"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_heart_filled"
+            android:src="@drawable/ic_heart"
             app:tint="#FFB300"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
+            android:id="@+id/tvCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thể loại"
+            android:textColor="#009688"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:layout_marginTop="2dp"
+            app:layout_constraintStart_toStartOf="@+id/tvPlaceName"
+            app:layout_constraintTop_toBottomOf="@+id/tvPlaceName" />
+
+        <TextView
             android:id="@+id/tvAddress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:text="Địa chỉ..."
             android:textColor="#757575"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/tvPlaceName"
-            app:layout_constraintTop_toBottomOf="@+id/tvPlaceName" />
+            app:layout_constraintTop_toBottomOf="@+id/tvCategory" />
 
         <LinearLayout
             android:id="@+id/layoutRating"
@@ -94,14 +108,17 @@
             android:id="@+id/btnDetail"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="0dp"
+            android:layout_marginTop="4dp"
             android:backgroundTint="#2E7D32"
             android:padding="0dp"
             android:text="Chi tiết"
             android:textColor="#FFFFFF"
             android:textSize="10sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/tvPlaceName" />
+            app:layout_constraintTop_toBottomOf="@+id/layoutRating"
+            app:layout_constraintStart_toStartOf="@+id/tvPlaceName"
+            app:layout_constraintVertical_bias="1.0"/>
 
         <ImageView
             android:id="@+id/btnDirections"
