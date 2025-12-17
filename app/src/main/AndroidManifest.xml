@@ -40,6 +40,10 @@
         <activity
             android:name=".ui.map.MapActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.main.notification.NotificationActivity"
+            android:exported="false" />
+
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

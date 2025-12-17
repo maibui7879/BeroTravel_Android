@@ -1,5 +1,6 @@
 package com.example.berotravel20.ui.main.home;
 
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +26,7 @@ import com.example.berotravel20.data.model.Place.PlaceResponse;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.data.model.Weather.WeatherResponse;
 import com.example.berotravel20.data.remote.RetrofitClient;
+import com.example.berotravel20.ui.main.notification.NotificationActivity;
 import com.example.berotravel20.ui.map.LocationHelper;
 
 import java.util.List;
@@ -46,7 +48,6 @@ public class HomeFragment extends Fragment {
     private LocationHelper locationHelper;
     private MapPlaceAdapter placeAdapter;
 
-    // API KEY Thời tiết (Nhớ thay key của bạn vào đây)
     private static final String WEATHER_API_KEY = "144fd485cfd342f1282c4b1e82446243";
     private static final String BASE_URL_WEATHER = "https://api.openweathermap.org/";
 
@@ -74,6 +75,12 @@ public class HomeFragment extends Fragment {
         ivWeatherIcon = view.findViewById(R.id.ivWeatherIcon);
 
         rvSuggestedPlaces = view.findViewById(R.id.rvSuggestedPlaces);
+
+        ImageView btnNotification = view.findViewById(R.id.btnNotification);
+        btnNotification.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), NotificationActivity.class);
+            startActivity(intent);
+        });
 
         // B. SETUP DANH SÁCH GỢI Ý (RECYCLERVIEW)
         setupRecyclerView();
