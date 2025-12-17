@@ -81,4 +81,7 @@ public class RetrofitClient {
     public VoteApiService getVoteApi() { return retrofit.create(VoteApiService.class); }
     public BookingApiService getBookingApi() { return retrofit.create(BookingApiService.class); }
     public JourneyApiService getJourneyApi() { return retrofit.create(JourneyApiService.class); }
+
+    public FavoriteApiService getFavoriteApi() { return retrofit.create(FavoriteApiService.class); }
+
 }

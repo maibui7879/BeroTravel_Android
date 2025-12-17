@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/toast_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_custom_toast"
+    android:elevation="6dp"
+    android:gravity="center_vertical"
+    android:minWidth="200dp"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
+
+    <ImageView
+        android:id="@+id/toast_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="12dp"
+        android:src="@drawable/ic_check_circle"
+        tools:src="@drawable/ic_check_circle" />
+    <TextView
+        android:id="@+id/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#333333"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        tools:text="Thông báo thành công!" />
+
+</LinearLayout>
