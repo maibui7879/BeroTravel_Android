@@ -40,7 +40,6 @@ public class SettingFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Liên kết với file xml vừa tạo
         return inflater.inflate(R.layout.fragment_setting, container, false);
     }
 
@@ -48,24 +47,50 @@ public class SettingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Xử lý nút Thông báo -> Mở Activity Thông báo
-        view.findViewById(R.id.btn_notification).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), NotificationActivity.class);
-            startActivity(intent);
+        // 1. Ánh xạ các nút chức năng
+        View btnNotification = view.findViewById(R.id.btn_notification);
+        View btnChangePassword = view.findViewById(R.id.btn_change_password);
+        Button btnLogout = view.findViewById(R.id.btn_logout);
+
+        // 2. Click mở Activity Thông báo
+        btnNotification.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), NotificationActivity.class));
         });
 
-        // 2. Xử lý nút Đổi mật khẩu -> Hiện Dialog
-        view.findViewById(R.id.btn_change_password).setOnClickListener(v -> {
-            showChangePasswordDialog();
-        });
+        // 3. Click mở Dialog Đổi mật khẩu
+        btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
 
-        // 3. Xử lý nút Chế độ tối (Theme)
+        // 4. Setup Theme (Sáng/Tối)
         setupThemeSwitch(view);
 
-        // 4. Xử lý Đăng xuất
-        view.findViewById(R.id.btn_logout).setOnClickListener(v -> {
-            logout();
-        });
+        // 5. Click Đăng xuất
+        btnLogout.setOnClickListener(v -> logout());
+    }
+
+    // --- LOGIC THEME (SÁNG/TỐI) ---
+    private void setupThemeSwitch(View view) {
+        // Ánh xạ đúng ID switchTheme từ file XML của bạn
+        SwitchCompat switchTheme = view.findViewById(R.id.switchTheme);
+
+        if (switchTheme != null) {
+            // Kiểm tra SharedPreferences để set trạng thái nút Switch ngay khi mở Fragment
+            SharedPreferences prefs = getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
+            boolean isDarkMode = prefs.getBoolean("isDarkMode", false);
+            switchTheme.setChecked(isDarkMode);
+
+            switchTheme.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                    Toast.makeText(getContext(), "Đã bật chế độ Tối", Toast.LENGTH_SHORT).show();
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                    Toast.makeText(getContext(), "Đã bật chế độ Sáng", Toast.LENGTH_SHORT).show();
+                }
+
+                // Lưu lại lựa chọn vào máy
+                prefs.edit().putBoolean("isDarkMode", isChecked).apply();
+            });
+        }
     }
 
     // --- LOGIC ĐỔI MẬT KHẨU ---
@@ -76,9 +101,10 @@ public class SettingFragment extends Fragment {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_change_password);
 
-        // Làm trong suốt nền dialog để bo góc đẹp
-        if (dialog.getWindow() != null)
+        if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
 
         EditText edtNewPass = dialog.findViewById(R.id.edt_new_pass);
         Button btnSave = dialog.findViewById(R.id.btn_save_pass);
@@ -89,21 +115,16 @@ public class SettingFragment extends Fragment {
                 Toast.makeText(getContext(), "Mật khẩu phải từ 6 ký tự trở lên", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // Gọi API đổi pass
             changePasswordApi(newPass, dialog);
         });
 
         dialog.show();
-        // Set chiều ngang dialog cho full màn hình chút
-        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
     private void changePasswordApi(String newPass, Dialog dialog) {
         User userUpdate = new User();
         userUpdate.password = newPass;
 
-        // Gọi API update profile nhưng chỉ gửi password
         RetrofitClient.getInstance(getContext()).getUserApi().updateProfile(userUpdate)
                 .enqueue(new Callback<User>() {
                     @Override
@@ -112,7 +133,7 @@ public class SettingFragment extends Fragment {
                             Toast.makeText(getContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         } else {
-                            Toast.makeText(getContext(), "Lỗi server: " + response.code(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Lỗi: " + response.code(), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -123,39 +144,15 @@ public class SettingFragment extends Fragment {
                 });
     }
 
-    // --- LOGIC THEME (SÁNG/TỐI) ---
-    private void setupThemeSwitch(View view) {
-        SwitchCompat switchTheme = view.findViewById(R.id.switch_theme);
-
-        // Kiểm tra chế độ hiện tại để set trạng thái nút switch
-        int currentMode = AppCompatDelegate.getDefaultNightMode();
-        switchTheme.setChecked(currentMode == AppCompatDelegate.MODE_NIGHT_YES);
-
-        switchTheme.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                Toast.makeText(getContext(), "Đã bật chế độ Tối", Toast.LENGTH_SHORT).show();
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                Toast.makeText(getContext(), "Đã bật chế độ Sáng", Toast.LENGTH_SHORT).show();
-            }
-            // Lưu ý: App sẽ tự load lại màn hình để áp dụng màu mới
-        });
-    }
-
     // --- LOGIC ĐĂNG XUẤT ---
     private void logout() {
         if (getContext() == null) return;
 
-        // 1. Xóa token đã lưu
+        // Xóa thông tin đăng nhập (nhưng giữ lại cài đặt Theme nếu muốn)
         SharedPreferences prefs = getContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear(); // Xóa sạch dữ liệu đăng nhập
-        editor.apply();
+        prefs.edit().clear().apply();
 
-        // 2. Chuyển về màn hình Đăng nhập (AuthActivity)
         Intent intent = new Intent(getActivity(), AuthActivity.class);
-        // Cờ này để xóa hết các Activity cũ, ngăn người dùng bấm Back quay lại
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }

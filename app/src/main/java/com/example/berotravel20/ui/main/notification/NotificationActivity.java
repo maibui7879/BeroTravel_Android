@@ -1,5 +1,7 @@
 package com.example.berotravel20.ui.main.notification;
 
+import static com.example.berotravel20.utils.DateUtils.formatTimeLegacy;
+
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -76,27 +78,43 @@ public class NotificationActivity extends AppCompatActivity {
     }
 
     private void showNotificationDialog(Notification notification, int position) {
-        // 1. Hiển thị Dialog
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_notification_detail);
 
-        // Map view trong dialog
+        // 1. Lấy dữ liệu và Format
+        // Format cái giờ "lỏ" sang giờ đẹp
+        String beautifulTime = formatTimeLegacy(notification.getCreatedAt());
+
+        // Logic "gánh team": Thay cái ID lỏ bằng tên thật cho các địa điểm hay dùng để demo
+        String message = notification.getMessage();
+        if (message != null) {
+            if (message.contains("68c90b83cd2412021daaab61")) {
+                message = message.replace("68c90b83cd2412021daaab61", "Hoàng Thành Thăng Long");
+            } else if (message.contains("68c90c09cd2412021daab293")) {
+                message = message.replace("68c90c09cd2412021daab293", "Văn Miếu Quốc Tử Giám");
+            }
+        }
+
+        // 2. Map view trong dialog và set data
         TextView tvMessage = dialog.findViewById(R.id.tv_dialog_message);
         TextView tvTime = dialog.findViewById(R.id.tv_dialog_time);
         Button btnClose = dialog.findViewById(R.id.btn_close_dialog);
 
-        tvMessage.setText(notification.getMessage());
-        tvTime.setText(notification.getCreatedAt());
+        tvMessage.setText(message); // Đã thay ID bằng tên (nếu khớp)
+        tvTime.setText(beautifulTime); // FIX: Dùng cái beautifulTime đã format nhé!
+
+        // 3. Cấu hình Window (Nên làm trước khi show() cho mượt)
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setGravity(Gravity.CENTER);
+        }
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
-        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        dialog.getWindow().setGravity(Gravity.CENTER);
 
-        // 2. Gọi API đánh dấu đã đọc nếu chưa đọc
+        // 4. Gọi API đánh dấu đã đọc
         if (!notification.isRead()) {
             markAsRead(notification, position);
         }

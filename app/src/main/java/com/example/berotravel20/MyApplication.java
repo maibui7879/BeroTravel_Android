@@ -16,6 +16,15 @@ public class MyApplication extends Application {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         RetrofitClient.getInstance(getApplicationContext());
         setupNotificationWorker();
+
+        boolean isDarkMode = getSharedPreferences("Settings", MODE_PRIVATE)
+                .getBoolean("isDarkMode", false);
+
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
     }
 
     private void setupNotificationWorker() {

@@ -10,7 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.model.Notification.Notification;
+
+// Nhớ thêm mấy cái import này để không bị báo đỏ ở hàm format
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.ViewHolder> {
 
@@ -40,10 +46,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         Notification notification = notificationList.get(position);
 
         holder.tvMessage.setText(notification.getMessage());
-        // Bạn có thể format lại ngày tháng ở đây cho đẹp
-        holder.tvTime.setText(notification.getCreatedAt());
 
-        // Nếu đã đọc thì ẩn chấm xanh và làm mờ text một chút
+        // --- SỬ DỤNG HÀM FORMAT TẠI ĐÂY ---
+        String rawTime = notification.getCreatedAt();
+        holder.tvTime.setText(formatTimeLegacy(rawTime));
+
         if (notification.isRead()) {
             holder.ivUnreadDot.setVisibility(View.GONE);
             holder.tvMessage.setAlpha(0.6f);
@@ -58,6 +65,21 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     @Override
     public int getItemCount() {
         return notificationList.size();
+    }
+
+    public String formatTimeLegacy(String rawDate) {
+        try {
+            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            parser.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            Date date = parser.parse(rawDate);
+
+            // Định dạng hiển thị dễ nhìn cho người dùng
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm - dd/MM/yyyy", Locale.getDefault());
+            return formatter.format(date);
+        } catch (Exception e) {
+            return "Vừa xong";
+        }
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

@@ -1,6 +1,7 @@
 package com.example.berotravel20.ui.common;
 
 import android.content.Intent; // Nhớ import Intent
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -8,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.example.berotravel20.R;
@@ -34,6 +36,14 @@ public class BaseActivity extends AppCompatActivity {
         // Load fragment mặc định là Home
         setSelected(navHome);
         replaceFragment(new HomeFragment());
+
+        SharedPreferences prefs = getSharedPreferences("Settings", MODE_PRIVATE);
+        boolean isDarkMode = prefs.getBoolean("isDarkMode", false);
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
     }
 
     private void initViews() {
