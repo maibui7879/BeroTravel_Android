@@ -1,6 +1,7 @@
 package com.example.berotravel20.ui.main.booking;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.example.berotravel20.R;
+import com.example.berotravel20.ui.common.BaseActivity;
 import com.example.berotravel20.ui.common.BaseFragment;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -23,7 +25,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class BookingSuccessFragment extends BaseFragment {
-    private String placeId, placeName, placeAddr, placeImg, totalStr;
+    private String placeId, placeName, placeAddr, placeImg;
     private int guests, pricePerDay;
     private long start, end;
 
@@ -41,14 +43,10 @@ public class BookingSuccessFragment extends BaseFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            placeId = getArguments().getString("id");
-            placeName = getArguments().getString("name");
-            placeAddr = getArguments().getString("addr");
-            placeImg = getArguments().getString("img");
-            pricePerDay = getArguments().getInt("price");
-            guests = getArguments().getInt("g");
-            start = getArguments().getLong("s");
-            end = getArguments().getLong("e");
+            placeId = getArguments().getString("id"); placeName = getArguments().getString("name");
+            placeAddr = getArguments().getString("addr"); placeImg = getArguments().getString("img");
+            pricePerDay = getArguments().getInt("price"); guests = getArguments().getInt("g");
+            start = getArguments().getLong("s"); end = getArguments().getLong("e");
         }
     }
 
@@ -61,25 +59,32 @@ public class BookingSuccessFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        String bookingId = "BERO-" + System.currentTimeMillis() / 10000;
+        // Tạo mã đặt chỗ ngẫu nhiên
+        String bookingId = "BERO-" + (System.currentTimeMillis() / 100000);
         ((TextView)view.findViewById(R.id.tv_booking_id)).setText("Mã đặt chỗ: " + bookingId);
 
-        // Nút Lưu hóa đơn
-        view.findViewById(R.id.btn_save_invoice).setOnClickListener(v -> {
-            generateAndSaveInvoice(bookingId);
-        });
+        // Hiển thị email người dùng (giả định từ TokenManager hoặc truyền vào)
+        if (tokenManager.getUsername() != null) {
+            ((TextView)view.findViewById(R.id.tv_user_email)).setText(tokenManager.getUsername());
+        }
 
-        // Nút về trang chủ
+        // Logic lưu hóa đơn
+        view.findViewById(R.id.btn_save_invoice).setOnClickListener(v -> generateAndSaveInvoice(bookingId));
+
+        // Logic chuyển về trang chủ / Lịch sử (Review Reservation)
         view.findViewById(R.id.btn_back_to_home).setOnClickListener(v -> {
-            getParentFragmentManager().popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE);
+            if (getActivity() != null) {
+                Intent intent = new Intent(getActivity(), BaseActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                intent.putExtra("NAVIGATE_TO", "BOOKING_HISTORY");
+                startActivity(intent);
+            }
         });
     }
 
+    // Logic xử lý xuất hóa đơn thành ảnh JPG
     private void generateAndSaveInvoice(String bookingId) {
-        // 1. Inflate layout Review ngầm
         View invoiceView = LayoutInflater.from(requireContext()).inflate(R.layout.fragment_review_reservation, null);
-
-        // 2. Đổ dữ liệu và tính toán giá (Giá * Ngày * Người)
         long nights = (end - start) / (24 * 60 * 60 * 1000);
         if (nights < 1) nights = 1;
         double totalInvoice = (pricePerDay * nights * guests) * 1.05;
@@ -93,39 +98,22 @@ public class BookingSuccessFragment extends BaseFragment {
         ((TextView) invoiceView.findViewById(R.id.tv_checkin_review)).setText(sdf.format(new Date(start)));
         ((TextView) invoiceView.findViewById(R.id.tv_checkout_review)).setText(sdf.format(new Date(end)));
 
-        // Ẩn UI thừa
         invoiceView.findViewById(R.id.btn_book_now).setVisibility(View.GONE);
         invoiceView.findViewById(R.id.toolbar).setVisibility(View.GONE);
 
-        // 3. FIX LỖI CRASH: Đo đạc kích thước View thủ công
-        // Lấy chiều rộng màn hình để làm chiều rộng hóa đơn
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
-
-        // Ép View đo đạc với chiều rộng cố định và chiều cao tự do
         int widthSpec = View.MeasureSpec.makeMeasureSpec(screenWidth, View.MeasureSpec.EXACTLY);
         int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
         invoiceView.measure(widthSpec, heightSpec);
-
-        // Bố trí lại vị trí các phần tử (nếu không gọi hàm này, width/height sẽ là 0)
         invoiceView.layout(0, 0, invoiceView.getMeasuredWidth(), invoiceView.getMeasuredHeight());
 
-        // Kiểm tra an toàn trước khi tạo Bitmap
-        if (invoiceView.getMeasuredWidth() <= 0 || invoiceView.getMeasuredHeight() <= 0) {
-            Toast.makeText(requireContext(), "Lỗi: Không thể đo kích thước hóa đơn", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 4. Vẽ Bitmap
         Bitmap bitmap = Bitmap.createBitmap(invoiceView.getMeasuredWidth(), invoiceView.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         invoiceView.draw(canvas);
-
-        // 5. Lưu vào máy
         saveBitmapToGallery(bitmap, "Invoice_" + bookingId);
     }
 
     private void saveBitmapToGallery(Bitmap bitmap, String filename) {
-        OutputStream fos;
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues cv = new ContentValues();
@@ -134,17 +122,12 @@ public class BookingSuccessFragment extends BaseFragment {
                 cv.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/BeroTravel");
                 Uri uri = getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
                 if (uri != null) {
-                    fos = getActivity().getContentResolver().openOutputStream(uri);
+                    OutputStream fos = getActivity().getContentResolver().openOutputStream(uri);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
                     if (fos != null) fos.close();
-                    Toast.makeText(requireContext(), "Đã lưu hóa đơn vào máy!", Toast.LENGTH_LONG).show();
+                    showSuccess("Đã lưu hóa đơn vào thư viện ảnh!");
                 }
-            } else {
-                // Xử lý cho Android cũ nếu cần
-                Toast.makeText(requireContext(), "Lưu thành công", Toast.LENGTH_SHORT).show();
             }
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }

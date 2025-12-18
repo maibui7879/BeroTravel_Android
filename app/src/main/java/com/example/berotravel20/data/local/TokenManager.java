@@ -7,9 +7,10 @@ public class TokenManager {
     private static final String PREF_NAME = "MyPrefs";
     private static final String KEY_TOKEN = "auth_token";
     private static final String KEY_USERNAME = "user_name";
+    private static final String KEY_USER_ID = "user_id"; // Đã có sẵn
+
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
-    private static final String KEY_USER_ID = "user_id";
     private static TokenManager instance;
 
     private TokenManager(Context context) {
@@ -24,18 +25,16 @@ public class TokenManager {
         return instance;
     }
 
-    // --- CÁCH 1: DÙNG CHO LOGIN/REGISTER (Lưu cả tên để hiện ngoài Splash) ---
-    public void saveUserSession(String token, String name) {
+    // --- SỬA TẠI ĐÂY: Thêm String userId vào tham số ---
+    public void saveUserSession(String token, String name, String userId) {
         editor.putString(KEY_TOKEN, token);
         editor.putString(KEY_USERNAME, name);
+        editor.putString(KEY_USER_ID, userId); // Bây giờ biến userId đã hợp lệ
         editor.apply();
     }
 
-    // --- CÁCH 2: HÀM CŨ (Giữ lại để không bị lỗi Code cũ) ---
-    // Nếu gọi hàm này, tên sẽ mặc định là "Bạn" hoặc null
     public void saveToken(String token) {
         editor.putString(KEY_TOKEN, token);
-        // Không lưu đè tên nếu chỉ muốn update token
         editor.apply();
     }
 
@@ -44,15 +43,18 @@ public class TokenManager {
     }
 
     public String getUsername() {
-        // Mặc định trả về "Bạn" nếu không tìm thấy tên
         return prefs.getString(KEY_USERNAME, "Bạn");
     }
+
     public String getUserId() {
         return prefs.getString(KEY_USER_ID, null);
     }
+
+    // Cập nhật hàm xóa session để xóa luôn cả ID
     public void clearSession() {
         editor.remove(KEY_TOKEN);
         editor.remove(KEY_USERNAME);
+        editor.remove(KEY_USER_ID); // Xóa nốt ID khi logout
         editor.apply();
     }
 }

@@ -87,7 +87,7 @@ public class LoginFragment extends Fragment {
         authViewModel.getLoginResponse().observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.token != null) {
                 // 1. Lưu Token vào máy
-                TokenManager.getInstance(requireContext()).saveUserSession(response.token, response.name);
+                TokenManager.getInstance(requireContext()).saveUserSession(response.token, response.name, response.id);
 
                 // 2. Thông báo login thành công
                 Toast.makeText(getContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();

@@ -79,7 +79,7 @@ public class RegisterFragment extends Fragment {
         authViewModel.getLoginResponse().observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.token != null) {
                 // Lưu token
-                TokenManager.getInstance(requireContext()).saveUserSession(response.token, response.name);
+                TokenManager.getInstance(requireContext()).saveUserSession(response.token, response.name, response.id);
 
                 Toast.makeText(getContext(), "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
 
