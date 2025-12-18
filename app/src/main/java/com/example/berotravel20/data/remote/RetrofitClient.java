@@ -72,6 +72,10 @@ public class RetrofitClient {
         }
         return instance;
     }
+    // Thêm hàm này vào file RetrofitClient.java
+    public Retrofit getRetrofit() {
+        return retrofit;
+    }
 
     // --- Danh sách API Service ---
     public AuthApiService getAuthApi() { return retrofit.create(AuthApiService.class); }
