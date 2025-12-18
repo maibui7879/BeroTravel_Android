@@ -1,8 +1,9 @@
 package com.example.berotravel20.data.remote;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import com.example.berotravel20.data.api.*; // Import các API Service
+import android.util.Log;
+import com.example.berotravel20.data.api.*;
+import com.example.berotravel20.data.local.TokenManager;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -16,32 +17,42 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
 
+    private static final String TAG = "RETROFIT_CLIENT";
+    private static final String BASE_URL = "http://10.0.2.2:5000/"; // IP máy ảo Android
+
     private static RetrofitClient instance = null;
-    private Retrofit retrofit;
-    private static final String BASE_URL = "http://10.0.2.2:5000/";
-    //"http://10.0.2.2:5000/"
+    private final Retrofit retrofit;
 
-    // Constructor Private
+    // Cache các API Service để tránh khởi tạo lại mỗi khi gọi (Tăng hiệu năng)
+    private AuthApiService authApi;
+    private UserApiService userApi;
+    private PlaceApiService placeApi;
+    private BookingApiService bookingApi;
+    private JourneyApiService journeyApi;
+    private FavoriteApiService favoriteApi;
+    private ReviewApiService reviewApi;
+
     private RetrofitClient(Context context) {
+        // Khởi tạo TokenManager
+        TokenManager tokenManager = TokenManager.getInstance(context);
 
-        // Cấu hình OkHttpClient với Interceptor (Lấy từ code ApiClient của bạn)
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(300, TimeUnit.SECONDS)
-                .readTimeout(300, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS) // 30s là đủ, tránh chờ quá lâu
+                .readTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
                         Request original = chain.request();
                         Request.Builder builder = original.newBuilder();
 
-                        // Lấy token trực tiếp từ SharedPreferences
-                        // Lưu ý: Đảm bảo tên file "MyPrefs" và key "auth_token" khớp với lúc bạn lưu khi Login
-                        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-                        String token = prefs.getString("auth_token", null);
+                        // Lấy token tự động từ TokenManager
+                        String token = tokenManager.getToken();
 
-                        // Nếu có token thì gắn vào Header
-                        if (token != null) {
+                        if (token != null && !token.isEmpty()) {
+                            Log.d(TAG, "Tiêm Token vào Header: Bearer " + token);
                             builder.header("Authorization", "Bearer " + token);
+                        } else {
+                            Log.w(TAG, "Yêu cầu được gửi mà không có Token");
                         }
 
                         return chain.proceed(builder.build());
@@ -49,26 +60,23 @@ public class RetrofitClient {
                 })
                 .build();
 
-        // Khởi tạo Retrofit
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
-                .client(client) // Gắn client đã có interceptor
+                .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
 
-    // Singleton: Khởi tạo 1 lần duy nhất từ Application
     public static synchronized RetrofitClient getInstance(Context context) {
         if (instance == null) {
-            instance = new RetrofitClient(context);
+            instance = new RetrofitClient(context.getApplicationContext());
         }
         return instance;
     }
 
-    // Hàm gọi nhanh cho Repository (không cần truyền Context nữa)
     public static synchronized RetrofitClient getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("RetrofitClient chưa được khởi tạo trong Application!");
+            throw new IllegalStateException("Hãy khởi tạo RetrofitClient.getInstance(context) trước!");
         }
         return instance;
     }

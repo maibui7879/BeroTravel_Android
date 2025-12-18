@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <style name="RoundedSquare">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <color name="gray_400">#BDBDBD</color>
+    <color name="red">#E53935</color>
     <style name="Theme.BeroTravel20" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
