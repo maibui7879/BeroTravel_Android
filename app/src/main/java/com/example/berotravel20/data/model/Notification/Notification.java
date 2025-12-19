@@ -1,28 +1,37 @@
 package com.example.berotravel20.data.model.Notification;
 
 import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
 
-public class Notification {
+public class Notification implements Serializable {
     @SerializedName("_id")
-    public String id;
+    private String id;
 
     @SerializedName("user_id")
-    public String userId; // Map chính xác chuỗi ID (vd: "68fb8f3b...")
+    private String userId;
 
-    public String message;
+    @SerializedName("message")
+    private String message;
 
-    public boolean read;
+    @SerializedName("read")
+    private boolean read;
 
-    // JSON trả về 2 trường thời gian giống nhau, bạn map cả 2 hoặc chọn 1 để dùng
     @SerializedName("created_at")
-    public String createdAtRaw;
+    private String createdAt;
 
-    @SerializedName("createdAt")
-    public String createdAt;
+    // Getters and Setters
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    @SerializedName("updatedAt")
-    public String updatedAt;
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
-    @SerializedName("__v")
-    public int version; // Trường version của MongoDB (thường không cần hiển thị lên UI)
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public boolean isRead() { return read; }
+    public void setRead(boolean read) { this.read = read; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }

@@ -8,6 +8,7 @@ public class User {
     public String email;
     @SerializedName("avatar_url") public String avatarUrl;
     @SerializedName("cover_url") public String coverUrl;
+    public String password;
     public String dob;
     public String bio;
 

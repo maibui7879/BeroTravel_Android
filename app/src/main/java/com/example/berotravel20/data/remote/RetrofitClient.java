@@ -73,7 +73,9 @@ public class RetrofitClient {
         }
         return instance;
     }
-
+    public Retrofit getRetrofit() {
+        return retrofit;
+    }
     public static synchronized RetrofitClient getInstance() {
         if (instance == null) {
             throw new IllegalStateException("Hãy khởi tạo RetrofitClient.getInstance(context) trước!");
@@ -92,5 +94,5 @@ public class RetrofitClient {
     public JourneyApiService getJourneyApi() { return retrofit.create(JourneyApiService.class); }
 
     public FavoriteApiService getFavoriteApi() { return retrofit.create(FavoriteApiService.class); }
-
+    public NotificationApiService getNotificationApi(){ return retrofit.create(NotificationApiService.class);}
 }

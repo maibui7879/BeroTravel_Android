@@ -1,6 +1,7 @@
 package com.example.berotravel20.ui.main.booking;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -24,15 +25,22 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.berotravel20.R;
 import com.example.berotravel20.adapters.BookingHistoryAdapter;
 import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.local.TokenManager;
 import com.example.berotravel20.data.model.Booking.Booking;
 import com.example.berotravel20.data.repository.BookingRepository;
+import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.ui.common.BaseFragment;
+import com.example.berotravel20.ui.common.RequestLoginDialog;
 
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
 
-public class BookingHistory extends BaseFragment implements BookingHistoryAdapter.OnBookingActionListener {
+public class BookingHistory extends BaseFragment implements BookingHistoryAdapter.OnBookingActionListener, RequestLoginDialog.RequestLoginListener {
+
     private RecyclerView rvHistory;
     private LinearLayout llEmpty;
     private AutoCompleteTextView autoFilter, autoSort;
@@ -44,23 +52,45 @@ public class BookingHistory extends BaseFragment implements BookingHistoryAdapte
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Lắng nghe tín hiệu làm mới sau khi thanh toán thành công
+        // Lắng nghe tín hiệu làm mới sau khi thanh toán hoặc đặt chỗ thành công từ Fragment khác
         getParentFragmentManager().setFragmentResultListener("booking_request_key", this, (requestKey, bundle) -> {
-            if (bundle.getBoolean("refresh_data")) { fetchData(false); }
+            if (bundle.getBoolean("refresh_data")) {
+                fetchData(false);
+            }
         });
     }
 
+    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_booking_history, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // 1. KIỂM TRA ĐĂNG NHẬP
+        if (!isUserLoggedIn()) {
+            showLoginRequestDialog();
+            return;
+        }
+
+        // 2. KHỞI TẠO UI VÀ REPOSITORY
         initViews(view);
         bookingRepository = new BookingRepository();
-        if (isUserLoggedIn()) fetchData(true);
+
+        // 3. TẢI DỮ LIỆU LẦN ĐẦU
+        fetchData(true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Tự động làm mới khi quay lại tab nếu đã đăng nhập
+        if (isUserLoggedIn()) {
+            fetchData(false);
+        }
     }
 
     private void initViews(View view) {
@@ -78,56 +108,114 @@ public class BookingHistory extends BaseFragment implements BookingHistoryAdapte
     }
 
     private void setupDropdownMenus() {
-        // Cấu hình Exposed Dropdown chuyên nghiệp
+        // Cấu hình lọc trạng thái
         String[] filters = {"Tất cả", "Đã thanh toán", "Chờ thanh toán"};
         autoFilter.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, filters));
         autoFilter.setOnItemClickListener((p, v, pos, id) -> processFilterAndSort());
 
+        // Cấu hình sắp xếp thời gian
         String[] sorts = {"Mới nhất", "Cũ nhất"};
         autoSort.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, sorts));
         autoSort.setOnItemClickListener((p, v, pos, id) -> processFilterAndSort());
     }
 
     private void fetchData(boolean showLoader) {
+        if (!isUserLoggedIn()) return;
+
         if (showLoader) showLoading();
-        bookingRepository.getBookings(tokenManager.getUserId(), new DataCallback<List<Booking>>() {
+
+        // Lấy ID người dùng từ TokenManager
+        String userId = TokenManager.getInstance(requireContext()).getUserId();
+
+        bookingRepository.getBookings(userId, new DataCallback<List<Booking>>() {
             @Override
             public void onSuccess(List<Booking> data) {
                 if (showLoader) hideLoading();
                 swipeRefresh.setRefreshing(false);
-                originalList = data;
+                originalList = (data != null) ? data : new ArrayList<>();
                 processFilterAndSort();
             }
-            @Override public void onError(String msg) {
-                swipeRefresh.setRefreshing(false); hideLoading(); showError(msg);
+
+            @Override
+            public void onError(String msg) {
+                if (showLoader) hideLoading();
+                swipeRefresh.setRefreshing(false);
+                showError(msg);
             }
         });
+    }
+
+    // Xử lý logic Filter và Sort cục bộ trên danh sách đã tải về
+    private void processFilterAndSort() {
+        if (originalList == null) return;
+        List<Booking> filtered = new ArrayList<>(originalList);
+
+        // 1. Lọc theo trạng thái thanh toán
+        String fText = autoFilter.getText().toString();
+        if (fText.equals("Đã thanh toán")) {
+            filtered.removeIf(b -> !b.isPaid);
+        } else if (fText.equals("Chờ thanh toán")) {
+            filtered.removeIf(b -> b.isPaid);
+        }
+
+        // 2. Sắp xếp theo ngày (Chuỗi ISO 8601)
+        String sText = autoSort.getText().toString();
+        Collections.sort(filtered, (b1, b2) -> {
+            if (b1.bookingDateTime == null || b2.bookingDateTime == null) return 0;
+            return sText.equals("Mới nhất")
+                    ? b2.bookingDateTime.compareTo(b1.bookingDateTime)
+                    : b1.bookingDateTime.compareTo(b2.bookingDateTime);
+        });
+
+        // 3. Cập nhật Adapter
+        if (adapter == null) {
+            adapter = new BookingHistoryAdapter(filtered, this);
+            rvHistory.setAdapter(adapter);
+        } else {
+            adapter.updateList(filtered);
+        }
+
+        // 4. Hiển thị Empty State nếu không có đơn nào
+        llEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+
+        // 5. Chạy hiệu ứng xuất hiện danh sách
+        LayoutAnimationController animation = AnimationUtils.loadLayoutAnimation(getContext(), R.anim.layout_animation_fall_down);
+        rvHistory.setLayoutAnimation(animation);
+        rvHistory.scheduleLayoutAnimation();
     }
 
     @Override
     public void onPay(Booking booking) {
         if (booking == null || booking.place == null) return;
 
-        // CHỈNH SỬA: Chuyển dữ liệu và điều hướng sang trang xác nhận
+        // Chuyển đổi ngày ISO sang Long để truyền vào ReviewReservationFragment
         long start = parseIsoDate(booking.bookingDateTime);
         long end = parseIsoDate(booking.checkoutDateTime);
 
         ReviewReservationFragment review = ReviewReservationFragment.newInstance(
-                booking.place.id, booking.place.name, booking.place.address,
-                booking.place.imageUrl, (int) booking.place.price,
-                booking.numberOfPeople, start, end
+                booking.place.id,
+                booking.place.name,
+                booking.place.address,
+                booking.place.imageUrl,
+                (int) booking.place.price,
+                booking.numberOfPeople,
+                start,
+                end
         );
         replaceFragment(review);
     }
 
     @Override
     public void onCancel(Booking booking) {
+        // Hiển thị Dialog xác nhận hủy
         final Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.layout_dialog_confirm);
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-        ((TextView) dialog.findViewById(R.id.dialog_message)).setText("Hủy đơn tại " + booking.place.name + "?");
+        TextView tvMsg = dialog.findViewById(R.id.dialog_message);
+        tvMsg.setText("Hủy đơn đặt chỗ tại " + booking.place.name + "?");
+
         dialog.findViewById(R.id.btn_negative).setOnClickListener(v -> dialog.dismiss());
         dialog.findViewById(R.id.btn_positive).setOnClickListener(v -> {
             dialog.dismiss();
@@ -140,46 +228,51 @@ public class BookingHistory extends BaseFragment implements BookingHistoryAdapte
         showLoading();
         bookingRepository.deleteBooking(id, new DataCallback<Void>() {
             @Override
-            public void onSuccess(Void d) { hideLoading(); showSuccess("Đã hủy đơn"); fetchData(false); }
-            @Override public void onError(String m) { hideLoading(); showError(m); }
+            public void onSuccess(Void d) {
+                hideLoading();
+                showSuccess("Đã hủy đơn thành công");
+                fetchData(false);
+            }
+
+            @Override
+            public void onError(String m) {
+                hideLoading();
+                showError(m);
+            }
         });
     }
 
-    private void processFilterAndSort() {
-        if (originalList == null) return;
-        List<Booking> filtered = new ArrayList<>(originalList);
-
-        String fText = autoFilter.getText().toString();
-        if (fText.equals("Đã thanh toán")) filtered.removeIf(b -> !b.isPaid);
-        else if (fText.equals("Chờ thanh toán")) filtered.removeIf(b -> b.isPaid);
-
-        String sText = autoSort.getText().toString();
-        Collections.sort(filtered, (b1, b2) -> sText.equals("Mới nhất")
-                ? b2.bookingDateTime.compareTo(b1.bookingDateTime)
-                : b1.bookingDateTime.compareTo(b2.bookingDateTime));
-
-        if (adapter == null) {
-            adapter = new BookingHistoryAdapter(filtered, this);
-            rvHistory.setAdapter(adapter);
-        } else {
-            adapter.updateList(filtered);
-        }
-
-        llEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
-
-        // SỬA LỖI ANIMATION: Trỏ đúng vào file LayoutAnimation
-        LayoutAnimationController animation = AnimationUtils.loadLayoutAnimation(getContext(), R.anim.layout_animation_fall_down);
-        rvHistory.setLayoutAnimation(animation);
-        rvHistory.scheduleLayoutAnimation();
+    @Override
+    public void onItemClick(Booking booking) {
+        // Xử lý khi click vào item (Xem chi tiết đơn hàng)
+        showSuccess("Mã đơn: " + booking.id);
     }
 
-    @Override public void onItemClick(Booking booking) { showSuccess("Mã đơn: " + booking.id); }
-
     private long parseIsoDate(String isoDate) {
+        if (isoDate == null) return System.currentTimeMillis();
         try {
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             return sdf.parse(isoDate).getTime();
-        } catch (Exception e) { return System.currentTimeMillis(); }
+        } catch (Exception e) {
+            return System.currentTimeMillis();
+        }
+    }
+
+    private void showLoginRequestDialog() {
+        RequestLoginDialog dialog = RequestLoginDialog.newInstance();
+        dialog.setListener(this);
+        dialog.show(getChildFragmentManager(), "RequestLoginDialog");
+    }
+
+    @Override
+    public void onLoginClick() {
+        Intent intent = new Intent(requireContext(), AuthActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onCancelClick() {
+        // Có thể quay về màn hình chính hoặc đóng fragment
     }
 }

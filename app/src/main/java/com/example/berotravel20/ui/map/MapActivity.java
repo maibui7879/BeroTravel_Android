@@ -15,7 +15,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -34,7 +33,6 @@ import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.data.repository.RouteRepository;
 import com.example.berotravel20.ui.auth.AuthActivity;
-import com.example.berotravel20.ui.common.BaseActivity; // Import BaseActivity
 import com.example.berotravel20.ui.common.RequestLoginDialog;
 import com.example.berotravel20.utils.CategoryUtils;
 import com.example.berotravel20.utils.MapUtils;
@@ -189,25 +187,8 @@ public class MapActivity extends AppCompatActivity implements
         // Setup Adapter
         placeAdapter = new MapPlaceAdapter(this, new MapPlaceAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(Place place) {
-                mapHelper.moveCamera(new LatLng(place.latitude, place.longitude), 16f);
-                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            }
-
-            @Override
-            public void onDirectionClick(Place place) {
-                enterPreviewDirectionMode(place);
-            }
-
-            @Override
             public void onFavoriteClick(Place place) {
                 handleFavoriteToggle(place);
-            }
-
-            // [MỚI] Xử lý khi bấm nút Chi tiết -> Chuyển về BaseActivity
-            @Override
-            public void onDetailClick(Place place) {
-                openPlaceDetail(place);
             }
         });
         rvMapResults.setAdapter(placeAdapter);
@@ -217,21 +198,6 @@ public class MapActivity extends AppCompatActivity implements
         btnLoadMore.setVisibility(View.GONE);
 
         setupDirectionUI();
-    }
-
-    // [HÀM ĐÃ SỬA] Chuyển hướng sang BaseActivity để mở PlaceFragment
-    private void openPlaceDetail(Place place) {
-        if (place == null || place.id == null) {
-            ToastUtils.showError(this, "Không thể tải thông tin địa điểm này.");
-            return;
-        }
-
-        Intent intent = new Intent(this, BaseActivity.class);
-        intent.putExtra("NAVIGATE_TO", "PLACE_DETAIL");
-        intent.putExtra("PLACE_ID", place.id); // Chỉ gửi ID
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
     }
 
     private void setupDirectionUI() {
@@ -452,16 +418,28 @@ public class MapActivity extends AppCompatActivity implements
             MapUtils.hideKeyboard(this);
         });
 
-        checkIntentForNavigation();
-        loadAllPlaces();
+        // 1. Kiểm tra Intent (Search hoặc Navigation)
+        handleIntentData();
+
+        // 2. Nếu không có Search Keyword thì mới load All Places mặc định
+        if (currentKeyword.isEmpty() && currentDestination == null) {
+            loadAllPlaces();
+        }
+
+        // 3. Lấy vị trí -> Nếu có Search Keyword thì sẽ trigger search trong callback của checkAndGetLocation
         checkAndGetLocation();
     }
 
-    private void checkIntentForNavigation() {
-        if (getIntent() != null && "DIRECT_TO_PLACE".equals(getIntent().getStringExtra("ACTION_TYPE"))) {
-            double lat = getIntent().getDoubleExtra("TARGET_LAT", 0);
-            double lng = getIntent().getDoubleExtra("TARGET_LNG", 0);
-            String name = getIntent().getStringExtra("TARGET_NAME");
+    // [CẬP NHẬT] Hàm xử lý Intent đầu vào
+    private void handleIntentData() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+
+        // Case A: Direct Navigation (Chỉ đường tới 1 điểm cụ thể)
+        if ("DIRECT_TO_PLACE".equals(intent.getStringExtra("ACTION_TYPE"))) {
+            double lat = intent.getDoubleExtra("TARGET_LAT", 0);
+            double lng = intent.getDoubleExtra("TARGET_LNG", 0);
+            String name = intent.getStringExtra("TARGET_NAME");
 
             if (lat != 0 && lng != 0) {
                 Place p = new Place();
@@ -469,19 +447,43 @@ public class MapActivity extends AppCompatActivity implements
                 enterPreviewDirectionMode(p);
             }
         }
+
+        // Case B: Search Query (Từ HomeFragment bấm vào search bar)
+        if (intent.hasExtra("SEARCH_QUERY")) {
+            String query = intent.getStringExtra("SEARCH_QUERY");
+            if (query != null && !query.isEmpty()) {
+                currentKeyword = query;
+                etSearch.setText(query); // Điền text vào ô search
+                // Chưa gọi search API vội, đợi có vị trí ở checkAndGetLocation
+            }
+        }
     }
 
+    // [CẬP NHẬT] Hàm lấy vị trí và điều phối luồng tiếp theo
     private void checkAndGetLocation() {
         locationHelper.getLastLocation(l -> {
             currentUserLocation = l;
-            if (currentDestination == null)
+            if (l == null) return;
+
+            // Di chuyển camera về vị trí người dùng (nếu chưa chọn đích)
+            if (currentDestination == null) {
                 mapHelper.moveCamera(new LatLng(l.getLatitude(), l.getLongitude()), 15f);
+            }
             if (locationHelper.hasPermission()) mapHelper.enableMyLocationLayer();
-            if (currentDestination != null) fetchRoute(currentDestination);
+
+            // LOGIC ĐIỀU PHỐI:
+            if (!currentKeyword.isEmpty()) {
+                // Ưu tiên 1: Có từ khóa tìm kiếm -> Gọi Search API ngay
+                resetAndCallSearchApi(null, null);
+            } else if (currentDestination != null && !isFetchingRoute) {
+                // Ưu tiên 2: Có điểm đến (Navigation) -> Tìm đường
+                fetchRoute(currentDestination);
+            }
+            // Nếu không có gì đặc biệt thì `loadAllPlaces` đã được gọi ở onMapReady rồi.
         });
     }
 
-    // --- NAVIGATION LOGIC ---
+    // --- NAVIGATION LOGIC (Giữ nguyên) ---
     @Override public void onUpdateInstruction(String i, String d) { runOnUiThread(() -> { navInstruction.setText(i); navDistance.setText(d); }); }
 
     @Override public void onNextStep(String i) {
