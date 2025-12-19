@@ -92,7 +92,7 @@ public class ReviewReservationFragment extends Fragment {
         tvDates.setText(datesStr); // "Feb 06-09 (3 Nights)" - assume passed correctly or format it here
 
         TextView tvGuests = view.findViewById(R.id.tv_stay_guests);
-        tvGuests.setText(getString(R.string.room_guests_format, guests));
+        tvGuests.setText("1 Room, " + guests + " Guests");
 
         TextView tvTotal = view.findViewById(R.id.tv_total_review);
         tvTotal.setText(totalStr);
@@ -121,9 +121,7 @@ public class ReviewReservationFragment extends Fragment {
 
         if (placeId == null) {
             android.widget.Toast
-                    .makeText(getContext(), getString(R.string.error_place_id_missing),
-                            android.widget.Toast.LENGTH_SHORT)
-                    .show();
+                    .makeText(getContext(), "Error: Place ID is missing!", android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -143,8 +141,7 @@ public class ReviewReservationFragment extends Fragment {
                 if (response.isSuccessful()) {
                     android.util.Log.d("ReviewReservation", "API Success");
                     android.widget.Toast
-                            .makeText(getContext(), getString(R.string.booking_saved_success),
-                                    android.widget.Toast.LENGTH_LONG)
+                            .makeText(getContext(), "Booking Saved Successfully!", android.widget.Toast.LENGTH_LONG)
                             .show();
                     // Clear back stack to Home
                     getParentFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);

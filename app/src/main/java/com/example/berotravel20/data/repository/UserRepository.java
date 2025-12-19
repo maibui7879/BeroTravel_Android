@@ -1,9 +1,10 @@
 package com.example.berotravel20.data.repository;
 
-import com.example.berotravel20.data.api.AuthApiService;
+import com.example.berotravel20.network.ApiService;
 import com.example.berotravel20.data.api.UserApiService;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Notification.Notification;
+import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.User.AuthPayload;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.data.remote.RetrofitClient;
@@ -12,17 +13,17 @@ import java.util.List;
 
 public class UserRepository extends BaseRepository {
     // Lấy instance của các API Service
-    private AuthApiService authApi = RetrofitClient.getInstance().getAuthApi();
+    private ApiService apiService = RetrofitClient.getInstance().getApiService();
     private UserApiService userApi = RetrofitClient.getInstance().getUserApi();
 
     // --- KHU VỰC AUTHENTICATION (Đăng nhập/Đăng ký) ---
 
     public void login(String email, String pass, DataCallback<AuthPayload.AuthResponse> callback) {
-        makeCall(authApi.login(new AuthPayload.LoginRequest(email, pass)), callback);
+        makeCall(apiService.login(new AuthPayload.LoginRequest(email, pass)), callback);
     }
 
     public void register(String name, String email, String pass, DataCallback<AuthPayload.AuthResponse> callback) {
-        makeCall(authApi.register(new AuthPayload.RegisterRequest(name, email, pass)), callback);
+        makeCall(apiService.register(new AuthPayload.RegisterRequest(name, email, pass)), callback);
     }
 
     // --- KHU VỰC USER PROFILE ---
@@ -50,7 +51,7 @@ public class UserRepository extends BaseRepository {
     }
 
     // Lấy danh sách các Place ID đã yêu thích
-    public void getFavorites(DataCallback<List<String>> callback) {
+    public void getFavorites(DataCallback<List<Place>> callback) {
         makeCall(userApi.getFavorites(), callback);
     }
 }

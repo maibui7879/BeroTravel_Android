@@ -3,6 +3,7 @@ package com.example.berotravel20.data.remote;
 import android.content.Context;
 import android.content.SharedPreferences;
 import com.example.berotravel20.data.api.*; // Import các API Service
+import com.example.berotravel20.network.ApiService; // Import main ApiService
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +19,7 @@ public class RetrofitClient {
 
     private static RetrofitClient instance = null;
     private Retrofit retrofit;
-    private static final String BASE_URL = "http://10.0.2.2:5001/";
+    private static final String BASE_URL = "http://10.0.2.2:5001/api/"; // Changed to match backend port and emulator
 
     // Constructor Private
     private RetrofitClient(Context context) {
@@ -38,11 +39,10 @@ public class RetrofitClient {
                         Request original = chain.request();
                         Request.Builder builder = original.newBuilder();
 
-                        // Lấy token trực tiếp từ SharedPreferences
-                        // Lưu ý: Đảm bảo tên file "BeroTravelPrefs" và key "auth_token" khớp với lúc
-                        // bạn lưu khi Login
-                        SharedPreferences prefs = context.getSharedPreferences("BeroTravelPrefs", Context.MODE_PRIVATE);
-                        String token = prefs.getString("auth_token", null);
+                        // Use TokenManager to get token consistently
+                        com.example.berotravel20.data.local.TokenManager tokenManager = com.example.berotravel20.data.local.TokenManager
+                                .getInstance(context);
+                        String token = tokenManager.getToken();
 
                         // Nếu có token thì gắn vào Header
                         if (token != null) {
@@ -79,8 +79,8 @@ public class RetrofitClient {
     }
 
     // --- Danh sách API Service ---
-    public AuthApiService getAuthApi() {
-        return retrofit.create(AuthApiService.class);
+    public ApiService getApiService() {
+        return retrofit.create(ApiService.class);
     }
 
     public UserApiService getUserApi() {

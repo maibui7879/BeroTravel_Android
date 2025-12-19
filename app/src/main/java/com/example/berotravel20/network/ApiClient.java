@@ -5,9 +5,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.example.berotravel20.data.local.TokenManager;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://10.0.2.2:5001/api/"; // Android Emulator loopback to host
+    // private static final String BASE_URL =
+    // "https://horace-unenlarging-yawnfully.ngrok-free.dev/api/"; // Android
+    // Emulator loopback to host
+    private static final String BASE_URL = "http://10.0.2.2:5001/api/"; // Localhost for Android Emulator
+
     private static Retrofit retrofit = null;
 
     public static Retrofit getClient(Context context) {

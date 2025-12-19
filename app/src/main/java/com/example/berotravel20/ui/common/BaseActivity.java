@@ -19,9 +19,9 @@ import com.example.berotravel20.ui.main.setting.SettingFragment;
 
 public class BaseActivity extends AppCompatActivity {
 
-    LinearLayout navHome, navMap, navAI, navSetting, navAccount;
-    ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount;
-    TextView textHome, textMap, textAI, textSetting, textAccount;
+    LinearLayout navHome, navMap, navAI, navSetting, navAccount, navJourney; // Added navJourney
+    ImageView iconHome, iconMap, iconAI, iconSetting, iconAccount, iconJourney; // Added iconJourney
+    TextView textHome, textMap, textAI, textSetting, textAccount, textJourney; // Added textJourney
     View bottomNavbar;
 
     @Override
@@ -44,9 +44,20 @@ public class BaseActivity extends AppCompatActivity {
                 bottomNavbar.setVisibility(View.VISIBLE);
             }
         });
+
+        // Handle Bottom Navigation Visibility
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                bottomNavbar.setVisibility(View.GONE);
+            } else {
+                bottomNavbar.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void initViews() {
+        bottomNavbar = findViewById(R.id.bottom_navbar); // Main container
+
         bottomNavbar = findViewById(R.id.bottom_navbar); // Main container
 
         navHome = findViewById(R.id.nav_home);
@@ -54,18 +65,21 @@ public class BaseActivity extends AppCompatActivity {
         navAI = findViewById(R.id.nav_ai);
         navSetting = findViewById(R.id.nav_setting);
         navAccount = findViewById(R.id.nav_account);
+        navJourney = findViewById(R.id.nav_journey); // Bind navJourney
 
         iconHome = findViewById(R.id.icon_home);
         iconMap = findViewById(R.id.icon_map);
         iconAI = findViewById(R.id.icon_ai);
         iconSetting = findViewById(R.id.icon_setting);
         iconAccount = findViewById(R.id.icon_account);
+        iconJourney = findViewById(R.id.icon_journey); // Bind iconJourney
 
         textHome = findViewById(R.id.text_home);
         textMap = findViewById(R.id.text_map);
         textAI = findViewById(R.id.text_ai);
         textSetting = findViewById(R.id.text_setting);
         textAccount = findViewById(R.id.text_account);
+        textJourney = findViewById(R.id.text_journey); // Bind textJourney
     }
 
     private void setupClickListeners() {
@@ -75,16 +89,11 @@ public class BaseActivity extends AppCompatActivity {
             replaceFragment(new HomeFragment());
         });
 
-        // --- SỬA ĐỔI Ở ĐÂY ---
         navMap.setOnClickListener(v -> {
-            // Không gọi setSelected(navMap) vì ta sẽ rời khỏi màn hình này
-            // Không gọi replaceFragment
-
             // Chuyển sang MapActivity riêng biệt
             Intent intent = new Intent(BaseActivity.this, MapActivity.class);
             startActivity(intent);
         });
-        // ---------------------
 
         navAI.setOnClickListener(v -> {
             setSelected(navAI);
@@ -94,6 +103,12 @@ public class BaseActivity extends AppCompatActivity {
         navSetting.setOnClickListener(v -> {
             setSelected(navSetting);
             replaceFragment(new SettingFragment());
+        });
+
+        // Added Journey Listener
+        navJourney.setOnClickListener(v -> {
+            setSelected(navJourney);
+            replaceFragment(new com.example.berotravel20.ui.main.journey.JourneyFragment());
         });
 
         navAccount.setOnClickListener(v -> {
@@ -110,23 +125,22 @@ public class BaseActivity extends AppCompatActivity {
         resetTab(iconAI, textAI);
         resetTab(iconSetting, textSetting);
         resetTab(iconAccount, textAccount);
+        resetTab(iconJourney, textJourney); // Reset Journey
 
         // set màu active cho tab được chọn
         if (selected == navHome)
             setActive(iconHome, textHome);
-        // if (selected == navMap) setActive(iconMap, textMap); // Map là Activity riêng
-        // nên ko cần set active ở đây
         if (selected == navAI)
             setActive(iconAI, textAI);
         if (selected == navSetting)
             setActive(iconSetting, textSetting);
         if (selected == navAccount)
             setActive(iconAccount, textAccount);
+        if (selected == navJourney)
+            setActive(iconJourney, textJourney); // Set Active Journey
     }
 
     private void resetTab(ImageView icon, TextView label) {
-        // Đảm bảo bạn có định nghĩa màu trong colors.xml hoặc dùng
-        // Color.GRAY/Color.BLACK
         icon.setColorFilter(getColor(R.color.nav_default));
         label.setTextColor(getColor(R.color.nav_default));
     }

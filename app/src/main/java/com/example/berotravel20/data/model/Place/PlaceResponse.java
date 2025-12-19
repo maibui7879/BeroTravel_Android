@@ -6,9 +6,9 @@ import java.util.List;
 public class PlaceResponse {
     public int total;
     public int page;
+    public int limit;
     public int totalPages;
 
-    // Đây mới là cái list bạn cần
     @SerializedName("data")
     public List<Place> data;
 }

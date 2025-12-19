@@ -148,8 +148,8 @@ public class ConfirmBookingFragment extends Fragment {
 
         tvPricePerDay.setText("$" + pricePerDay);
         tvDates.setText(dateRange);
-        tvGuests.setText(getString(R.string.guest_format, guests));
-        tvTotalDays.setText(getString(R.string.days_format, days));
+        tvGuests.setText(guests + " Guest");
+        tvTotalDays.setText(days + " Days");
         tvTax.setText("$" + String.format("%.2f", tax));
         tvTotalPrice.setText("$" + String.format("%.2f", grandTotal));
 
@@ -170,8 +170,9 @@ public class ConfirmBookingFragment extends Fragment {
     }
 
     private void submitBooking() {
-        // Navigate to QR Payment Screen
-        PaymentQrFragment paymentFragment = PaymentQrFragment.newInstance(
+        // Navigate to Success Screen directly (API call is moved to
+        // ReviewReservationFragment)
+        BookingSuccessFragment successFragment = BookingSuccessFragment.newInstance(
                 placeId,
                 placeName,
                 tvDates.getText().toString() + " (" + tvTotalDays.getText().toString() + ")",
@@ -181,7 +182,7 @@ public class ConfirmBookingFragment extends Fragment {
                 checkoutTime);
 
         getParentFragmentManager().beginTransaction()
-                .replace(R.id.base_container, paymentFragment)
+                .replace(R.id.base_container, successFragment)
                 .addToBackStack(null)
                 .commit();
     }

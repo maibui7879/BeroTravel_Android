@@ -15,31 +15,25 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.berotravel20.R;
-import com.example.berotravel20.models.BookingRequest;
 import com.example.berotravel20.network.ApiClient;
 import com.example.berotravel20.network.ApiService;
-import com.example.berotravel20.network.TokenManager;
+import com.example.berotravel20.data.local.TokenManager;
 
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
 public class BookingFragment extends Fragment {
 
     private String placeId;
     private String placeName;
-    private String placeAddress;
-    private String placeImage;
+    private String address;
+    private String imageUrl;
     private int price;
 
     private TextView tvPlaceName, tvAddress, tvCheckin, tvCheckout;
     private EditText etPeople;
     private Button btnBookNow;
-    private android.widget.ImageView imgHeader;
     private ApiService apiService;
 
     private Calendar checkinDate = Calendar.getInstance();
@@ -47,14 +41,14 @@ public class BookingFragment extends Fragment {
     private SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd EEE", Locale.getDefault());
     private SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
-    public static BookingFragment newInstance(String placeId, String placeName, String placeAddress, String placeImage,
+    public static BookingFragment newInstance(String placeId, String placeName, String address, String imageUrl,
             int price) {
         BookingFragment fragment = new BookingFragment();
         Bundle args = new Bundle();
         args.putString("PLACE_ID", placeId);
         args.putString("PLACE_NAME", placeName);
-        args.putString("PLACE_ADDRESS", placeAddress);
-        args.putString("PLACE_IMAGE", placeImage);
+        args.putString("ADDRESS", address);
+        args.putString("IMAGE_URL", imageUrl);
         args.putInt("PRICE", price);
         fragment.setArguments(args);
         return fragment;
@@ -66,8 +60,8 @@ public class BookingFragment extends Fragment {
         if (getArguments() != null) {
             placeId = getArguments().getString("PLACE_ID");
             placeName = getArguments().getString("PLACE_NAME");
-            placeAddress = getArguments().getString("PLACE_ADDRESS");
-            placeImage = getArguments().getString("PLACE_IMAGE");
+            address = getArguments().getString("ADDRESS");
+            imageUrl = getArguments().getString("IMAGE_URL");
             price = getArguments().getInt("PRICE");
         }
         apiService = ApiClient.getClient(getContext()).create(ApiService.class);
@@ -89,21 +83,9 @@ public class BookingFragment extends Fragment {
         tvCheckout = view.findViewById(R.id.btn_checkout);
         etPeople = view.findViewById(R.id.et_people_count);
         btnBookNow = view.findViewById(R.id.btn_book_now);
-        imgHeader = view.findViewById(R.id.img_header);
 
         tvPlaceName.setText(placeName);
-        if (placeAddress != null) {
-            tvAddress.setText(placeAddress);
-        } else {
-            tvAddress.setText(getString(R.string.mock_address));
-        }
-
-        if (placeImage != null && !placeImage.isEmpty()) {
-            com.bumptech.glide.Glide.with(this)
-                    .load(placeImage)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(imgHeader);
-        }
+        tvAddress.setText("Mock Address, City"); // Ideally passed via args or fetched
 
         // Defaults
         checkoutDate.add(Calendar.DAY_OF_MONTH, 3); // Default 3 days
@@ -142,7 +124,7 @@ public class BookingFragment extends Fragment {
         String peopleStr = etPeople.getText().toString();
 
         if (peopleStr.isEmpty()) {
-            Toast.makeText(getContext(), getString(R.string.enter_guests_error), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Please enter number of guests", Toast.LENGTH_SHORT).show();
             return;
         }
 
