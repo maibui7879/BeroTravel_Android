@@ -90,18 +90,20 @@
             app:layout_constraintStart_toStartOf="@+id/tvPlaceName"
             app:layout_constraintTop_toBottomOf="@+id/tvAddress">
 
-            <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/ic_star_yellow" />
+            <ImageView android:id="@+id/heart1" android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/ic_heart" app:tint="#D3D3D3" />
+            <ImageView android:id="@+id/heart2" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_heart" app:tint="#D3D3D3" />
+            <ImageView android:id="@+id/heart3" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_heart" app:tint="#D3D3D3" />
+            <ImageView android:id="@+id/heart4" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_heart" app:tint="#D3D3D3" />
+            <ImageView android:id="@+id/heart5" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_heart" app:tint="#D3D3D3" />
 
             <TextView
-                android:id="@+id/tvStatusInfo"
+                android:id="@+id/tvRatingText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=" Đang cập nhật"
+                android:layout_marginStart="4dp"
+                android:text="(0.0)"
                 android:textColor="#757575"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <Button

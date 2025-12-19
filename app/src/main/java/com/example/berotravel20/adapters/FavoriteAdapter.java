@@ -94,7 +94,6 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.ViewHo
             ivImage = itemView.findViewById(R.id.imgPlace);
             tvName = itemView.findViewById(R.id.tvPlaceName);
             tvAddress = itemView.findViewById(R.id.tvAddress);
-            tvStatusInfo = itemView.findViewById(R.id.tvStatusInfo);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
             btnDetail = itemView.findViewById(R.id.btnDetail);
             btnDirections = itemView.findViewById(R.id.btnDirections);

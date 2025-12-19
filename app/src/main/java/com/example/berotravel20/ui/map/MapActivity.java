@@ -288,8 +288,18 @@ public class MapActivity extends AppCompatActivity implements
 
     private void performSearch() {
         currentKeyword = etSearch.getText().toString().trim();
-        if (currentKeyword.length() < 2) return;
-        resetAndCallSearchApi(null, null);
+        if (currentKeyword.isEmpty() && currentCategory == null) {
+            ToastUtils.show(this, "Vui lòng nhập từ khóa hoặc chọn danh mục", 3);
+            return;
+        }
+
+        // Nếu chưa có vị trí, yêu cầu lấy vị trí trước rồi sẽ tự động search sau
+        if (currentUserLocation == null) {
+            showLoading();
+            checkAndGetLocation();
+        } else {
+            resetAndCallSearchApi(null, null);
+        }
     }
 
     private void resetAndCallSearchApi(Integer page, Integer limit) {

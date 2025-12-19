@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
->
+    android:background="#FFFFFF">
 
     <LinearLayout
         android:id="@+id/loadingLayout"
@@ -13,13 +13,12 @@
         android:gravity="center"
         android:orientation="vertical"
         android:background="#F8F9FA"
-        android:elevation="10dp">
-
+        android:elevation="20dp"
+        android:visibility="gone">
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminateTint="#008080"/>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -32,19 +31,19 @@
         android:id="@+id/mainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:visibility="invisible">
+        android:fillViewport="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingBottom="20dp">
 
-            <View
+            <ImageView
                 android:id="@+id/headerBackground"
                 android:layout_width="match_parent"
-                android:layout_height="220dp"
-
+                android:layout_height="280dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_top"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -57,10 +56,10 @@
 
                 <de.hdodenhof.circleimageview.CircleImageView
                     android:id="@+id/ivAvatar"
-                    android:layout_width="45dp"
-                    android:layout_height="45dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/account_icon"
-                    app:civ_border_width="1dp"
+                    app:civ_border_width="2dp"
                     app:civ_border_color="#FFFFFF"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -85,13 +84,11 @@
                     app:layout_constraintBottom_toBottomOf="@id/ivAvatar"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/ivAvatar">
-
                     <ImageView
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:src="@drawable/ic_bell"
                         app:tint="@color/white" />
-
                     <TextView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
@@ -107,17 +104,16 @@
             <EditText
                 android:id="@+id/etSearch"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="54dp"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_white_rounded"
-                android:drawableEnd="@drawable/ic_search_gray"
+                android:drawableStart="@drawable/ic_search_gray"
                 android:drawablePadding="12dp"
                 android:hint="Bạn muốn đi đâu?"
                 android:paddingHorizontal="16dp"
                 android:inputType="text"
-                android:imeOptions="actionSearch"
-                android:maxLines="1"
+                android:elevation="4dp"
                 app:layout_constraintTop_toBottomOf="@id/layoutHeader" />
 
             <androidx.cardview.widget.CardView
@@ -130,90 +126,100 @@
                 app:cardElevation="8dp"
                 app:layout_constraintTop_toBottomOf="@id/etSearch">
 
-                <LinearLayout
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:padding="20dp">
 
+                    <TextView
+                        android:id="@+id/tvCityName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="4dp"
+                        android:text="Đang tải vị trí..."
+                        android:textColor="#555"
+                        android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/map_icon"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvTemperature"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#333"
+                        android:textSize="48sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvCityName" />
+
+                    <TextView
+                        android:id="@+id/tvUnit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="°C"
+                        android:textColor="#333"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toEndOf="@id/tvTemperature"
+                        app:layout_constraintTop_toTopOf="@id/tvTemperature" />
+
+                    <TextView
+                        android:id="@+id/tvWeatherDesc"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:text="--"
+                        android:textColor="#555"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="@id/tvTemperature"
+                        app:layout_constraintEnd_toStartOf="@+id/guideline_mid"
+                        app:layout_constraintStart_toEndOf="@id/tvUnit"
+                        app:layout_constraintTop_toTopOf="@id/tvTemperature" />
+
+                    <TextView
+                        android:id="@+id/tvRecommendation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thích hợp để ra ngoài"
+                        android:textColor="#008080"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvTemperature" />
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/guideline_mid"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="0.65" />
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1.2"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tvCityName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Đang tải vị trí..."
-                            android:textColor="#555"
-                            android:textSize="14sp"
-                            android:drawablePadding="4dp"
-                            app:drawableStartCompat="@drawable/map_icon"
-                            android:layout_marginBottom="4dp"/>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="bottom"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/tvTemperature"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="--"
-                                android:textColor="#333"
-                                android:textSize="48sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="12dp"
-                                android:text="°C"
-                                android:textColor="#333"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvWeatherDesc"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginBottom="8dp"
-                                android:text="--"
-                                android:textColor="#555"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Thích hợp để ra ngoài"
-                            android:textColor="#008080"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:gravity="end"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/guideline_mid"
+                        app:layout_constraintTop_toTopOf="parent">
 
                         <ImageView
                             android:id="@+id/ivWeatherIcon"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:layout_marginBottom="8dp"
+                            android:layout_width="45dp"
+                            android:layout_height="45dp"
+                            android:layout_marginBottom="4dp"
                             android:src="@drawable/ic_sun" />
-                        <TextView android:id="@+id/tvHumidity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Độ ẩm: --" android:textSize="12sp"/>
-                        <TextView android:id="@+id/tvWindSpeed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sức gió: --" android:textSize="12sp" android:layout_marginTop="4dp"/>
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="UV: Thấp" android:textSize="12sp" android:layout_marginTop="4dp"/>
+
+                        <TextView android:id="@+id/tvHumidity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Độ ẩm: --" android:textSize="11sp"/>
+                        <TextView android:id="@+id/tvWindSpeed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sức gió: --" android:textSize="11sp" android:layout_marginTop="2dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="UV: Thấp" android:textSize="11sp" android:layout_marginTop="2dp"/>
                     </LinearLayout>
-                </LinearLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
 
             <LinearLayout

@@ -27,6 +27,7 @@ import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.ui.common.BaseFragment;
+import com.example.berotravel20.utils.CategoryUtils;
 import com.example.berotravel20.utils.ImageUtils;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -37,7 +38,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback {
@@ -54,19 +55,12 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
     private GoogleMap mMap;
     private Marker currentMarker;
 
-    private final Map<String, String> categoryMap = new HashMap<String, String>() {{
-        put("Khách sạn", "hotel"); put("Nhà hàng", "restaurant");
-        put("Điểm tham quan", "tourist_attraction"); put("Công viên", "park");
-        put("Quán Bar", "bar"); put("Cà phê", "cafe");
-    }};
-
     private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     ivMainPreview.setImageURI(uri);
                     tvPlaceholder.setVisibility(View.GONE);
-                    // Khi chọn file, xóa nội dung URL đã nhập để tránh nhầm lẫn
-                    etImageUrl.setText("");
+                    etImageUrl.setText(""); // Xóa URL nếu chọn ảnh từ máy
                     base64MainImage = ImageUtils.uriToBase64(requireContext(), uri);
                 }
             });
@@ -135,7 +129,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         etDesc = view.findViewById(R.id.et_place_description);
         etLat = view.findViewById(R.id.et_lat);
         etLng = view.findViewById(R.id.et_lng);
-        etImageUrl = view.findViewById(R.id.et_image_url); // Cần thêm ID này vào XML
+        etImageUrl = view.findViewById(R.id.et_image_url);
         spinnerCategory = view.findViewById(R.id.spinner_category);
         ivMainPreview = view.findViewById(R.id.iv_main_preview);
         tvPlaceholder = view.findViewById(R.id.tv_main_placeholder);
@@ -144,7 +138,14 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         etLng.setText(String.valueOf(lng));
     }
 
-    // Tự động load preview khi người dùng dán URL
+    private void setupCategorySpinner() {
+        // Lấy toàn bộ danh sách tên Tiếng Việt từ CategoryUtils
+        List<String> displayNames = new ArrayList<>(CategoryUtils.CATEGORY_MAP.values());
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_dropdown_item_1line, displayNames);
+        spinnerCategory.setAdapter(adapter);
+    }
+
     private void setupUrlImageListener() {
         etImageUrl.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -153,7 +154,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             public void afterTextChanged(Editable s) {
                 String url = s.toString().trim();
                 if (!url.isEmpty()) {
-                    base64MainImage = null; // Reset base64 nếu dùng URL
+                    base64MainImage = null;
                     tvPlaceholder.setVisibility(View.GONE);
                     Glide.with(AddPlaceFragment.this).load(url).into(ivMainPreview);
                 }
@@ -170,12 +171,11 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                 etName.setText(place.name);
                 etAddress.setText(place.address);
                 etDesc.setText(place.description);
-                etImageUrl.setText(place.imageUrl); // Hiển thị URL hiện tại nếu có
-                for (Map.Entry<String, String> entry : categoryMap.entrySet()) {
-                    if (entry.getValue().equals(place.category)) {
-                        spinnerCategory.setText(entry.getKey(), false); break;
-                    }
-                }
+                etImageUrl.setText(place.imageUrl);
+
+                // Hiển thị tên Tiếng Việt dựa trên key từ Server
+                spinnerCategory.setText(CategoryUtils.getLabel(place.category), false);
+
                 if (place.imageUrl != null) {
                     tvPlaceholder.setVisibility(View.GONE);
                     Glide.with(AddPlaceFragment.this).load(place.imageUrl).into(ivMainPreview);
@@ -188,24 +188,30 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
     private void savePlace() {
         String name = etName.getText().toString().trim();
         String address = etAddress.getText().toString().trim();
-        String vnCat = spinnerCategory.getText().toString().trim();
+        String vnNameSelected = spinnerCategory.getText().toString().trim();
         String inputUrl = etImageUrl.getText().toString().trim();
 
-        if (name.isEmpty() || address.isEmpty() || vnCat.isEmpty()) {
-            showCustomDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc.", false, null); return;
+        if (name.isEmpty() || address.isEmpty() || vnNameSelected.isEmpty()) {
+            showCustomDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc.", false, null);
+            return;
+        }
+
+        // Tìm lại key server dựa trên giá trị hiển thị tiếng Việt
+        String serverKey = "other"; // mặc định
+        for (Map.Entry<String, String> entry : CategoryUtils.CATEGORY_MAP.entrySet()) {
+            if (entry.getValue().equals(vnNameSelected)) {
+                serverKey = entry.getKey();
+                break;
+            }
         }
 
         Place.Request req = new Place.Request();
         req.name = name; req.address = address; req.latitude = lat; req.longitude = lng;
         req.description = etDesc.getText().toString().trim();
-        req.category = categoryMap.get(vnCat);
+        req.category = serverKey;
 
-        // Ưu tiên Base64 (ảnh upload), nếu không có mới dùng URL nhập chay
-        if (base64MainImage != null) {
-            req.imageUrl = base64MainImage;
-        } else if (!inputUrl.isEmpty()) {
-            req.imageUrl = inputUrl;
-        }
+        if (base64MainImage != null) req.imageUrl = base64MainImage;
+        else if (!inputUrl.isEmpty()) req.imageUrl = inputUrl;
 
         req.imgSet = new ArrayList<>();
 
@@ -214,10 +220,10 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             @Override
             public void onSuccess(Place data) {
                 hideLoading();
-                String msg = isEditMode ? "Cập nhật địa điểm thành công!" : "Đã lưu địa điểm mới!";
+                String msg = isEditMode ? "Cập nhật thành công!" : "Đã lưu địa điểm mới!";
                 showCustomDialog("Thành công", msg, true, () -> handleExit());
             }
-            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi hệ thống", msg, false, null); }
+            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi", msg, false, null); }
         };
 
         if (isEditMode) repository.updatePlace(mEditPlaceId, req, callback);
@@ -233,11 +239,6 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         }
     }
 
-    private void setupCategorySpinner() {
-        String[] categories = categoryMap.keySet().toArray(new String[0]);
-        spinnerCategory.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, categories));
-    }
-
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -251,16 +252,13 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             @Override public void onMarkerDrag(@NonNull Marker m) {}
             @Override public void onMarkerDragEnd(@NonNull Marker m) { updateMarkerPosition(m.getPosition()); }
         });
-        mMap.setOnCameraMoveStartedListener(reason -> {
-            View mapV = getChildFragmentManager().findFragmentById(R.id.map_picker).getView();
-            if (mapV != null) mapV.getParent().requestDisallowInterceptTouchEvent(true);
-        });
     }
 
     private void updateMarkerPosition(LatLng latLng) {
         if (currentMarker != null) currentMarker.setPosition(latLng);
         lat = latLng.latitude; lng = latLng.longitude;
-        etLat.setText(String.format("%.6f", lat)); etLng.setText(String.format("%.6f", lng));
+        etLat.setText(String.format("%.6f", lat));
+        etLng.setText(String.format("%.6f", lng));
     }
 
     private void showCustomDialog(String title, String message, boolean isSuccess, Runnable onConfirm) {

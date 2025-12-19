@@ -32,6 +32,7 @@ android:background="@drawable/rounded_bg_white">
             android:src="@android:drawable/ic_menu_gallery"
             android:padding="50dp"
             android:alpha="0.5"/>
+
     </androidx.cardview.widget.CardView>
 
     <Button
@@ -43,7 +44,15 @@ android:background="@drawable/rounded_bg_white">
         android:layout_marginTop="12dp"
         app:strokeColor="@color/teal_700"
         android:textColor="@color/teal_700"/>
-
+    <EditText
+        android:id="@+id/et_photo_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Hoặc dán URL hình ảnh vào đây"
+        android:inputType="textUri"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"
+        />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -19,7 +19,7 @@
         android:id="@+id/main_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="82dp"
+        android:layout_marginBottom="80dp"
         android:fillViewport="true"
         android:background="@android:color/transparent">
 
@@ -186,5 +186,12 @@
                 android:paddingTop="4dp"/>
         </LinearLayout>
     </LinearLayout>
-
+    <ProgressBar
+        android:id="@+id/pb_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:elevation="20dp"
+        android:indeterminateTint="@color/teal_700" />
 </RelativeLayout>

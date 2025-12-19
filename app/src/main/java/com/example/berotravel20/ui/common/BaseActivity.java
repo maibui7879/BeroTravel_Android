@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
@@ -26,7 +27,7 @@ public class BaseActivity extends AppCompatActivity {
     private LinearLayout navHome, navMap, navItinerary, navBooking, navNotifications, navAccount;
     private ImageView iconHome, iconMap, iconItinerary, iconBooking, iconNotifications, iconAccount;
     private TextView textHome, textMap, textItinerary, textBooking, textNotifications, textAccount;
-
+    private NestedScrollView mainScrollView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +35,7 @@ public class BaseActivity extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
-
+        mainScrollView = findViewById(R.id.main_scroll_view);
         // Xử lý Intent lúc khởi tạo (nếu có)
         if (handleIntent(getIntent())) {
             resetTabColors();
@@ -50,7 +51,12 @@ public class BaseActivity extends AppCompatActivity {
         setIntent(intent); // Cập nhật Intent mới nhất để handleIntent lấy được dữ liệu [Cực kỳ quan trọng]
         handleIntent(intent);
     }
-
+    public void resetMainScroll() {
+        if (mainScrollView != null) {
+            mainScrollView.scrollTo(0, 0);
+            // Hoặc dùng: mainScrollView.fullScroll(View.FOCUS_UP);
+        }
+    }
     private boolean handleIntent(Intent intent) {
         if (intent != null && intent.hasExtra("NAVIGATE_TO")) {
             String navigateTo = intent.getStringExtra("NAVIGATE_TO");
@@ -142,12 +148,14 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     public void replaceFragment(Fragment fragment) {
+        resetMainScroll();
         getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         String tag = fragment.getClass().getSimpleName();
         getSupportFragmentManager().beginTransaction().replace(R.id.base_container, fragment, tag).commit();
     }
 
     public void navigateToDetail(Fragment fragment) {
+        resetMainScroll();
         String tag = fragment.getClass().getSimpleName();
         getSupportFragmentManager().beginTransaction()
                 .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
