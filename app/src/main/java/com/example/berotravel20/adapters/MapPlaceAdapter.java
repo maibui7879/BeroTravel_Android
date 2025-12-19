@@ -1,24 +1,19 @@
 package com.example.berotravel20.adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.model.Place.Place;
-import com.example.berotravel20.ui.main.place.PlaceFragment;
-import com.example.berotravel20.ui.map.MapActivity;
 import com.example.berotravel20.utils.CategoryUtils;
 
 import java.util.ArrayList;
@@ -32,30 +27,30 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     private List<Place> placeList = new ArrayList<>();
     private Set<String> favoriteIds = new HashSet<>();
     private OnItemClickListener listener;
-
-    // [MỚI] Biến lưu layout ID để thay đổi giao diện (Ngang/Dọc)
     private int itemLayoutRes;
 
+    // Interface được mở rộng để Host xử lý logic điều hướng
     public interface OnItemClickListener {
         void onFavoriteClick(Place place);
+        void onItemClick(Place place);      // Để mở chi tiết (PlaceFragment)
+        void onDirectionClick(Place place); // Để mở bản đồ (MapActivity)
     }
 
-    // --- CONSTRUCTOR 1: Mặc định (Dùng layout item_place_result cũ - Ngang) ---
+    // Constructor 1: Dùng layout mặc định (Ngang)
     public MapPlaceAdapter(Context context, OnItemClickListener listener) {
         this.context = context;
         this.listener = listener;
-        this.itemLayoutRes = R.layout.item_place_result; // Mặc định
+        this.itemLayoutRes = R.layout.item_place_result;
     }
 
-    // --- CONSTRUCTOR 2: Tùy chỉnh (Dùng layout truyền vào - Dọc) ---
-    // [ĐÂY LÀ PHẦN SỬA LỖI CHO BẠN]
+    // Constructor 2: Truyền layout tùy chỉnh (Ví dụ: Thẻ dọc item_place_vertical)
     public MapPlaceAdapter(Context context, int itemLayoutRes, OnItemClickListener listener) {
         this.context = context;
         this.listener = listener;
         this.itemLayoutRes = itemLayoutRes;
     }
 
-    // --- DATA METHODS ---
+    // --- Cập nhật dữ liệu ---
     public void setData(List<Place> list) {
         this.placeList.clear();
         if (list != null) {
@@ -97,7 +92,6 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
     @NonNull
     @Override
     public PlaceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // [QUAN TRỌNG] Sử dụng itemLayoutRes thay vì fix cứng layout
         View view = LayoutInflater.from(context).inflate(itemLayoutRes, parent, false);
         return new PlaceViewHolder(view);
     }
@@ -107,12 +101,12 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
         Place place = placeList.get(position);
         if (place == null) return;
 
-        // 1. Bind Text
+        // 1. Bind Thông tin văn bản (Check null để an toàn cho nhiều loại layout)
         if (holder.tvName != null) holder.tvName.setText(place.name);
         if (holder.tvAddress != null) holder.tvAddress.setText(place.address != null ? place.address : "Chưa có địa chỉ");
         if (holder.tvCategory != null) holder.tvCategory.setText(CategoryUtils.getLabel(place.category));
 
-        // 2. Bind Image
+        // 2. Bind Hình ảnh
         if (holder.imgPlace != null) {
             Glide.with(context)
                     .load(place.imageUrl)
@@ -122,24 +116,22 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
                     .into(holder.imgPlace);
         }
 
-        // 3. Bind Status Info
-        StringBuilder statusBuilder = new StringBuilder();
-        if (place.status != null) {
-            statusBuilder.append("open".equalsIgnoreCase(place.status.initialStatus) ? "Đang mở" : "Đóng cửa");
-            if (place.status.price > 0) {
-                statusBuilder.append(" • ").append(String.format("%,.0f đ", place.status.price));
-            } else {
-                statusBuilder.append(" • Miễn phí");
+        // 3. Bind Trạng thái & Khoảng cách
+        if (holder.tvStatusInfo != null) {
+            StringBuilder sb = new StringBuilder();
+            if (place.status != null) {
+                sb.append("open".equalsIgnoreCase(place.status.initialStatus) ? "Đang mở" : "Đóng cửa");
+                if (place.status.price > 0) {
+                    sb.append(" • ").append(String.format("%,.0f đ", place.status.price));
+                }
             }
-        } else {
-            statusBuilder.append("Thông tin");
+            if (place.distance != null) {
+                sb.append(" • ").append(String.format("%.1f km", place.distance));
+            }
+            holder.tvStatusInfo.setText(sb.toString().isEmpty() ? "Thông tin đang cập nhật" : sb.toString());
         }
-        if (place.distance != null) {
-            statusBuilder.append(" • Cách ").append(String.format("%.1f km", place.distance));
-        }
-        if (holder.tvStatusInfo != null) holder.tvStatusInfo.setText(statusBuilder.toString());
 
-        // 4. Bind Favorite
+        // 4. Bind Nút Yêu thích
         boolean isFav = favoriteIds.contains(place.id);
         if (holder.btnFavorite != null) {
             holder.btnFavorite.setImageResource(isFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
@@ -148,39 +140,24 @@ public class MapPlaceAdapter extends RecyclerView.Adapter<MapPlaceAdapter.PlaceV
             });
         }
 
-        // --- NAVIGATION LOGIC ---
+        // --- XỬ LÝ SỰ KIỆN CLICK (Gửi ngược về Fragment/Activity) ---
 
-        // Click toàn bộ item -> Mở chi tiết
-        holder.itemView.setOnClickListener(v -> navigateToDetail(place));
+        // Click vào toàn bộ thẻ hoặc nút chi tiết -> Gọi onItemClick
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onItemClick(place);
+        });
 
-        // Click nút Chi tiết -> Mở chi tiết
         if (holder.btnDetail != null) {
-            holder.btnDetail.setOnClickListener(v -> navigateToDetail(place));
-        }
-
-        // Click nút Chỉ đường -> Mở MapActivity
-        if (holder.btnDirection != null) {
-            holder.btnDirection.setOnClickListener(v -> {
-                Intent intent = new Intent(context, MapActivity.class);
-                intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
-                intent.putExtra("TARGET_LAT", place.latitude);
-                intent.putExtra("TARGET_LNG", place.longitude);
-                intent.putExtra("TARGET_NAME", place.name);
-                context.startActivity(intent);
+            holder.btnDetail.setOnClickListener(v -> {
+                if (listener != null) listener.onItemClick(place);
             });
         }
-    }
 
-    private void navigateToDetail(Place place) {
-        if (context instanceof AppCompatActivity) {
-            AppCompatActivity activity = (AppCompatActivity) context;
-            activity.getSupportFragmentManager().beginTransaction()
-                    .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
-                    .replace(R.id.base_container, PlaceFragment.newInstance(place.id))
-                    .addToBackStack(null)
-                    .commit();
-        } else {
-            Toast.makeText(context, "Không thể mở chi tiết", Toast.LENGTH_SHORT).show();
+        // Click nút Chỉ đường -> Gọi onDirectionClick
+        if (holder.btnDirection != null) {
+            holder.btnDirection.setOnClickListener(v -> {
+                if (listener != null) listener.onDirectionClick(place);
+            });
         }
     }
 

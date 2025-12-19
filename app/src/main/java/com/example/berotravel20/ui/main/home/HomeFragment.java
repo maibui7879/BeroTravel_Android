@@ -31,8 +31,11 @@ import com.example.berotravel20.data.remote.RetrofitClient;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.main.notification.NotificationFragment;
+import com.example.berotravel20.ui.main.place.PlaceFragment;
 import com.example.berotravel20.ui.map.LocationHelper;
 import com.example.berotravel20.ui.map.MapActivity;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -46,7 +49,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvUsername, tvTemperature, tvWeatherDesc, tvHumidity, tvWindSpeed, tvCityName;
     private TextView tvSuggestedTitle;
     private ImageView ivAvatar, ivWeatherIcon;
-    private EditText etSearch; // Thêm EditText
+    private EditText etSearch;
     private View loadingLayout, mainContent;
 
     // --- Logic & Data ---
@@ -82,14 +85,14 @@ public class HomeFragment extends BaseFragment {
         setupAdapters(view);
         setupCategoryEvents(view);
         loadUserProfile();
+
+        // Chỉ hiện loading nếu chưa có dữ liệu vị trí
         if (!isLocationFound) {
             setupLocationLogic();
         } else {
-            // Nếu đã có dữ liệu (khi Back về), ẩn loading ngay lập tức
-            if (loadingLayout != null) loadingLayout.setVisibility(View.GONE);
-            if (mainContent != null) mainContent.setVisibility(View.VISIBLE);
+            hideLoadingLayout();
+            loadAllInitialPlaces();
         }
-
     }
 
     private void initViews(View view) {
@@ -106,9 +109,9 @@ public class HomeFragment extends BaseFragment {
         ivWeatherIcon = view.findViewById(R.id.ivWeatherIcon);
         etSearch = view.findViewById(R.id.etSearch);
 
-        // --- [QUAN TRỌNG] XỬ LÝ SEARCH INPUT ---
+        // --- XỬ LÝ SEARCH INPUT ---
         if (etSearch != null) {
-            // 1. Xử lý khi bấm nút Search trên bàn phím ảo
+            // 1. Enter bàn phím
             etSearch.setOnEditorActionListener((v, actionId, event) -> {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     performSearchLogic();
@@ -117,31 +120,25 @@ public class HomeFragment extends BaseFragment {
                 return false;
             });
 
-            // 2. Xử lý khi bấm trực tiếp vào icon Search (Drawable Right/End)
+            // 2. Click icon kính lúp bên phải
             etSearch.setOnTouchListener((v, event) -> {
-                final int DRAWABLE_RIGHT = 2; // Index của drawable bên phải
-
+                final int DRAWABLE_RIGHT = 2;
                 if (event.getAction() == MotionEvent.ACTION_UP) {
-                    // Kiểm tra drawable có tồn tại không
                     if (etSearch.getCompoundDrawables()[DRAWABLE_RIGHT] != null) {
-                        // Tính toán vùng chạm: Nếu x >= (Chiều rộng view - chiều rộng icon - padding) -> Đã chạm icon
                         if (event.getRawX() >= (etSearch.getRight() - etSearch.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - etSearch.getPaddingEnd() - 30)) {
                             performSearchLogic();
-                            return true; // Đã xử lý, không truyền sự kiện đi tiếp
+                            return true;
                         }
                     }
                 }
-                return false; // Trả về false để các sự kiện khác (như focus) vẫn hoạt động
+                return false;
             });
         }
 
-        // Ánh xạ an toàn cho Title
         View secSuggest = view.findViewById(R.id.secSuggested);
         if (secSuggest != null) {
             tvSuggestedTitle = secSuggest.findViewById(R.id.tvSectionTitle);
-            if (tvSuggestedTitle != null) {
-                tvSuggestedTitle.setText("Điểm tham quan gợi ý");
-            }
+            if (tvSuggestedTitle != null) tvSuggestedTitle.setText("Khám phá địa điểm");
         }
 
         view.findViewById(R.id.btnNotification).setOnClickListener(v ->
@@ -149,41 +146,34 @@ public class HomeFragment extends BaseFragment {
         );
     }
 
-    // Hàm logic chung cho cả 2 sự kiện search
     private void performSearchLogic() {
         String query = etSearch.getText().toString().trim();
         if (!query.isEmpty()) {
-            navigateToMapSearch(query);
+            Intent intent = new Intent(getActivity(), MapActivity.class);
+            intent.putExtra("SEARCH_QUERY", query);
+            startActivity(intent);
         } else {
             Toast.makeText(getContext(), "Vui lòng nhập từ khóa", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void navigateToMapSearch(String query) {
-        Intent intent = new Intent(getActivity(), MapActivity.class);
-        intent.putExtra("SEARCH_QUERY", query);
-        startActivity(intent);
-    }
-
     private void setupAdapters(View view) {
         MapPlaceAdapter.OnItemClickListener listener = createListener();
 
-        // 1. Section Gợi ý: Dùng ITEM DỌC (item_place_vertical)
+        // 1. Suggested (Dùng thẻ Dọc)
         View secSuggest = view.findViewById(R.id.secSuggested);
         if (secSuggest != null) {
             RecyclerView rvSuggest = secSuggest.findViewById(R.id.rv_home_list);
             rvSuggest.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-
-            // Dùng Constructor tùy chỉnh layout
             suggestAdapter = new MapPlaceAdapter(getContext(), R.layout.item_place_vertical, listener);
             rvSuggest.setAdapter(suggestAdapter);
         }
 
-        // 2. Section Khách sạn: Dùng Item Ngang Mặc Định
+        // 2. Hotels (Dọc - Item ngang mặc định)
         setupSection(view.findViewById(R.id.secHotels), "Khách sạn gần bạn",
                 LinearLayoutManager.VERTICAL, hotelAdapter = new MapPlaceAdapter(getContext(), listener));
 
-        // 3. Section Nhà hàng: Dùng Item Ngang Mặc Định
+        // 3. Restaurants (Ngang - Item ngang mặc định)
         setupSection(view.findViewById(R.id.secRestaurants), "Nhà hàng ngon gần bạn",
                 LinearLayoutManager.HORIZONTAL, restaurantAdapter = new MapPlaceAdapter(getContext(), listener));
     }
@@ -206,40 +196,29 @@ public class HomeFragment extends BaseFragment {
                 Toast.makeText(getContext(), "Đang xác định vị trí...", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             String category = null;
             String title = "Gợi ý";
-
             int id = v.getId();
-            if (id == R.id.btnCatPark) { category = "park"; title = "Công viên xanh"; }
+            if (id == R.id.btnCatPark) { category = "park"; title = "Công viên quanh đây"; }
             else if (id == R.id.btnCatRestaurant) { category = "restaurant"; title = "Nhà hàng quanh đây"; }
-            else if (id == R.id.btnCatAttraction) { category = "tourist_attraction"; title = "Điểm tham quan"; }
-            else if (id == R.id.btnCatHotel) { category = "lodging"; title = "Nơi lưu trú"; }
+            else if (id == R.id.btnCatAttraction) { category = "tourist_attraction"; title = "Điểm tham quan quanh đây"; }
+            else if (id == R.id.btnCatHotel) { category = "lodging"; title = "Nơi lưu trú quanh đây"; }
             else if (id == R.id.btnCatBar) { category = "bar"; title = "Quán bar & Pub"; }
 
-            if (tvSuggestedTitle != null) {
-                tvSuggestedTitle.setText(title);
-            }
-
+            if (tvSuggestedTitle != null) tvSuggestedTitle.setText(title);
             filterSuggestionByCategory(category);
         };
 
-        View btnPark = view.findViewById(R.id.btnCatPark);
-        View btnRest = view.findViewById(R.id.btnCatRestaurant);
-        View btnAttr = view.findViewById(R.id.btnCatAttraction);
-        View btnHotel = view.findViewById(R.id.btnCatHotel);
-        View btnBar = view.findViewById(R.id.btnCatBar);
-
-        if (btnPark != null) btnPark.setOnClickListener(catListener);
-        if (btnRest != null) btnRest.setOnClickListener(catListener);
-        if (btnAttr != null) btnAttr.setOnClickListener(catListener);
-        if (btnHotel != null) btnHotel.setOnClickListener(catListener);
-        if (btnBar != null) btnBar.setOnClickListener(catListener);
+        view.findViewById(R.id.btnCatPark).setOnClickListener(catListener);
+        view.findViewById(R.id.btnCatRestaurant).setOnClickListener(catListener);
+        view.findViewById(R.id.btnCatAttraction).setOnClickListener(catListener);
+        view.findViewById(R.id.btnCatHotel).setOnClickListener(catListener);
+        view.findViewById(R.id.btnCatBar).setOnClickListener(catListener);
     }
 
     private void setupLocationLogic() {
-        if (loadingLayout != null) loadingLayout.setVisibility(View.VISIBLE);
-        if (mainContent != null) mainContent.setVisibility(View.INVISIBLE);
+        loadingLayout.setVisibility(View.VISIBLE);
+        mainContent.setVisibility(View.INVISIBLE);
 
         if (locationHelper.hasPermission()) {
             locationHelper.getLastLocation(location -> {
@@ -256,55 +235,90 @@ public class HomeFragment extends BaseFragment {
             });
         } else {
             locationHelper.requestPermission();
-            if (loadingLayout != null) loadingLayout.setVisibility(View.GONE);
-            if (tvCityName != null) tvCityName.setText("Cần quyền vị trí");
+            hideLoadingLayout();
+            loadAllInitialPlaces();
         }
     }
 
     private void handleLocationFound(android.location.Location location) {
         if (isLocationFound) return;
-
         currentLat = location.getLatitude();
         currentLng = location.getLongitude();
         isLocationFound = true;
 
-        if (loadingLayout != null) loadingLayout.setVisibility(View.GONE);
-        if (mainContent != null) mainContent.setVisibility(View.VISIBLE);
-
+        hideLoadingLayout();
         fetchWeather(currentLat, currentLng);
-        loadInitialData(currentLat, currentLng);
+        loadAllInitialPlaces(); // Ban đầu load tất cả
+        loadNearbySections(currentLat, currentLng);
     }
 
-    private void loadInitialData(double lat, double lng) {
-        int radius = 5000;
-        filterSuggestionByCategory(null);
+    private void hideLoadingLayout() {
+        if (loadingLayout != null) loadingLayout.setVisibility(View.GONE);
+        if (mainContent != null) mainContent.setVisibility(View.VISIBLE);
+    }
 
-        placeRepository.searchNearby(lat, lng, radius, null, "hotel", 1, 10, new DataCallback<PlaceResponse>() {
-            @Override public void onSuccess(PlaceResponse d) { if (isAdded()) hotelAdapter.setData(d.data); }
-            @Override public void onError(String msg) { }
+    private void loadAllInitialPlaces() {
+        placeRepository.getAllPlaces(new DataCallback<List<Place>>() {
+            @Override
+            public void onSuccess(List<Place> data) {
+                if (isAdded() && data != null) suggestAdapter.setData(data);
+            }
+            @Override public void onError(String msg) { Log.e("Home", msg); }
         });
+    }
 
-        placeRepository.searchNearby(lat, lng, radius, null, "restaurant", 1, 10, new DataCallback<PlaceResponse>() {
+    private void loadNearbySections(double lat, double lng) {
+        placeRepository.searchNearby(lat, lng, 5000, null, "hotel", 1, 10, new DataCallback<PlaceResponse>() {
+            @Override public void onSuccess(PlaceResponse d) { if (isAdded()) hotelAdapter.setData(d.data); }
+            @Override public void onError(String msg) {}
+        });
+        placeRepository.searchNearby(lat, lng, 5000, null, "restaurant", 1, 10, new DataCallback<PlaceResponse>() {
             @Override public void onSuccess(PlaceResponse d) { if (isAdded()) restaurantAdapter.setData(d.data); }
-            @Override public void onError(String msg) { }
+            @Override public void onError(String msg) {}
         });
     }
 
     private void filterSuggestionByCategory(String category) {
         if (suggestAdapter != null) suggestAdapter.clearData();
-        placeRepository.searchNearby(currentLat, currentLng, 5000, null, category, 1, 10, new DataCallback<PlaceResponse>() {
-            @Override public void onSuccess(PlaceResponse data) { if (isAdded() && data != null) suggestAdapter.setData(data.data); }
-            @Override public void onError(String msg) { }
+        placeRepository.searchNearby(currentLat, currentLng, 5000, null, category, 1, 20, new DataCallback<PlaceResponse>() {
+            @Override
+            public void onSuccess(PlaceResponse data) {
+                if (isAdded() && data != null) suggestAdapter.setData(data.data);
+            }
+            @Override public void onError(String msg) {
+                if (isAdded()) Toast.makeText(getContext(), "Không tìm thấy địa điểm", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
     private MapPlaceAdapter.OnItemClickListener createListener() {
         return new MapPlaceAdapter.OnItemClickListener() {
-            @Override public void onFavoriteClick(Place p) {
+            @Override
+            public void onFavoriteClick(Place p) {
                 if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
                 if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
                 if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
                 Toast.makeText(getContext(), "Đã cập nhật yêu thích", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onItemClick(Place p) {
+                // CHUYỂN MÀN HÌNH TẠI ĐÂY (VÌ HOME CÓ ID base_container)
+                getParentFragmentManager().beginTransaction()
+                        .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                        .replace(R.id.base_container, PlaceFragment.newInstance(p.id))
+                        .addToBackStack(null)
+                        .commit();
+            }
+
+            @Override
+            public void onDirectionClick(Place p) {
+                Intent intent = new Intent(getActivity(), MapActivity.class);
+                intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
+                intent.putExtra("TARGET_LAT", p.latitude);
+                intent.putExtra("TARGET_LNG", p.longitude);
+                intent.putExtra("TARGET_NAME", p.name);
+                startActivity(intent);
             }
         };
     }
