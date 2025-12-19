@@ -4,6 +4,8 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Place.Place;
@@ -44,7 +47,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
     private PlaceRepository repository;
     private String base64MainImage = null;
 
-    private EditText etName, etAddress, etDesc, etLat, etLng;
+    private EditText etName, etAddress, etDesc, etLat, etLng, etImageUrl;
     private AutoCompleteTextView spinnerCategory;
     private ImageView ivMainPreview;
     private TextView tvPlaceholder, tvFormTitle;
@@ -62,6 +65,8 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                 if (uri != null) {
                     ivMainPreview.setImageURI(uri);
                     tvPlaceholder.setVisibility(View.GONE);
+                    // Khi chọn file, xóa nội dung URL đã nhập để tránh nhầm lẫn
+                    etImageUrl.setText("");
                     base64MainImage = ImageUtils.uriToBase64(requireContext(), uri);
                 }
             });
@@ -106,6 +111,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         super.onViewCreated(view, savedInstanceState);
         initViews(view);
         setupCategorySpinner();
+        setupUrlImageListener();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_picker);
         if (mapFragment != null) mapFragment.getMapAsync(this);
@@ -123,6 +129,38 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         view.findViewById(R.id.btn_close).setOnClickListener(closeAction);
     }
 
+    private void initViews(View view) {
+        etName = view.findViewById(R.id.et_place_name);
+        etAddress = view.findViewById(R.id.et_place_address);
+        etDesc = view.findViewById(R.id.et_place_description);
+        etLat = view.findViewById(R.id.et_lat);
+        etLng = view.findViewById(R.id.et_lng);
+        etImageUrl = view.findViewById(R.id.et_image_url); // Cần thêm ID này vào XML
+        spinnerCategory = view.findViewById(R.id.spinner_category);
+        ivMainPreview = view.findViewById(R.id.iv_main_preview);
+        tvPlaceholder = view.findViewById(R.id.tv_main_placeholder);
+        tvFormTitle = view.findViewById(R.id.tv_form_title);
+        etLat.setText(String.valueOf(lat));
+        etLng.setText(String.valueOf(lng));
+    }
+
+    // Tự động load preview khi người dùng dán URL
+    private void setupUrlImageListener() {
+        etImageUrl.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                String url = s.toString().trim();
+                if (!url.isEmpty()) {
+                    base64MainImage = null; // Reset base64 nếu dùng URL
+                    tvPlaceholder.setVisibility(View.GONE);
+                    Glide.with(AddPlaceFragment.this).load(url).into(ivMainPreview);
+                }
+            }
+        });
+    }
+
     private void loadExistingPlaceData() {
         showLoading();
         repository.getPlaceById(mEditPlaceId, new DataCallback<Place>() {
@@ -132,6 +170,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                 etName.setText(place.name);
                 etAddress.setText(place.address);
                 etDesc.setText(place.description);
+                etImageUrl.setText(place.imageUrl); // Hiển thị URL hiện tại nếu có
                 for (Map.Entry<String, String> entry : categoryMap.entrySet()) {
                     if (entry.getValue().equals(place.category)) {
                         spinnerCategory.setText(entry.getKey(), false); break;
@@ -139,11 +178,50 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                 }
                 if (place.imageUrl != null) {
                     tvPlaceholder.setVisibility(View.GONE);
-                    com.bumptech.glide.Glide.with(AddPlaceFragment.this).load(place.imageUrl).into(ivMainPreview);
+                    Glide.with(AddPlaceFragment.this).load(place.imageUrl).into(ivMainPreview);
                 }
             }
             @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi", msg, false, null); }
         });
+    }
+
+    private void savePlace() {
+        String name = etName.getText().toString().trim();
+        String address = etAddress.getText().toString().trim();
+        String vnCat = spinnerCategory.getText().toString().trim();
+        String inputUrl = etImageUrl.getText().toString().trim();
+
+        if (name.isEmpty() || address.isEmpty() || vnCat.isEmpty()) {
+            showCustomDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc.", false, null); return;
+        }
+
+        Place.Request req = new Place.Request();
+        req.name = name; req.address = address; req.latitude = lat; req.longitude = lng;
+        req.description = etDesc.getText().toString().trim();
+        req.category = categoryMap.get(vnCat);
+
+        // Ưu tiên Base64 (ảnh upload), nếu không có mới dùng URL nhập chay
+        if (base64MainImage != null) {
+            req.imageUrl = base64MainImage;
+        } else if (!inputUrl.isEmpty()) {
+            req.imageUrl = inputUrl;
+        }
+
+        req.imgSet = new ArrayList<>();
+
+        showLoading();
+        DataCallback<Place> callback = new DataCallback<Place>() {
+            @Override
+            public void onSuccess(Place data) {
+                hideLoading();
+                String msg = isEditMode ? "Cập nhật địa điểm thành công!" : "Đã lưu địa điểm mới!";
+                showCustomDialog("Thành công", msg, true, () -> handleExit());
+            }
+            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi hệ thống", msg, false, null); }
+        };
+
+        if (isEditMode) repository.updatePlace(mEditPlaceId, req, callback);
+        else repository.createPlace(req, callback);
     }
 
     private void handleExit() {
@@ -153,20 +231,6 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         } else {
             requireActivity().finish();
         }
-    }
-
-    private void initViews(View view) {
-        etName = view.findViewById(R.id.et_place_name);
-        etAddress = view.findViewById(R.id.et_place_address);
-        etDesc = view.findViewById(R.id.et_place_description);
-        etLat = view.findViewById(R.id.et_lat);
-        etLng = view.findViewById(R.id.et_lng);
-        spinnerCategory = view.findViewById(R.id.spinner_category);
-        ivMainPreview = view.findViewById(R.id.iv_main_preview);
-        tvPlaceholder = view.findViewById(R.id.tv_main_placeholder);
-        tvFormTitle = view.findViewById(R.id.tv_form_title);
-        etLat.setText(String.valueOf(lat));
-        etLng.setText(String.valueOf(lng));
     }
 
     private void setupCategorySpinner() {
@@ -199,42 +263,8 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         etLat.setText(String.format("%.6f", lat)); etLng.setText(String.format("%.6f", lng));
     }
 
-    private void savePlace() {
-        String name = etName.getText().toString().trim();
-        String address = etAddress.getText().toString().trim();
-        String vnCat = spinnerCategory.getText().toString().trim();
-
-        if (name.isEmpty() || address.isEmpty() || vnCat.isEmpty()) {
-            showCustomDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc.", false, null); return;
-        }
-
-        Place.Request req = new Place.Request();
-        req.name = name; req.address = address; req.latitude = lat; req.longitude = lng;
-        req.description = etDesc.getText().toString().trim();
-        req.category = categoryMap.get(vnCat);
-        req.imageUrl = base64MainImage; req.imgSet = new ArrayList<>();
-
-        showLoading();
-        DataCallback<Place> callback = new DataCallback<Place>() {
-            @Override
-            public void onSuccess(Place data) {
-                hideLoading();
-                String msg = isEditMode ? "Cập nhật địa điểm thành công!" : "Đã lưu địa điểm mới!";
-                showCustomDialog("Thành công", msg, true, () -> handleExit());
-            }
-            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi hệ thống", msg, false, null); }
-        };
-
-        if (isEditMode) repository.updatePlace(mEditPlaceId, req, callback);
-        else repository.createPlace(req, callback);
-    }
-
-    /**
-     * Hiển thị Custom Dialog thay thế cho AlertDialog mặc định
-     */
     private void showCustomDialog(String title, String message, boolean isSuccess, Runnable onConfirm) {
         if (getActivity() == null) return;
-
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_dialog_success, null);
         android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(requireContext()).setView(dialogView).create();
 
@@ -243,26 +273,20 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_icon);
         Button btnConfirm = dialogView.findViewById(R.id.btn_dialog_confirm);
 
-        tvTitle.setText(title);
-        tvMsg.setText(message);
-
-        // Đổi Icon và Màu nếu là thông báo lỗi
+        tvTitle.setText(title); tvMsg.setText(message);
         if (!isSuccess) {
             ivIcon.setImageResource(android.R.drawable.ic_dialog_alert);
             ivIcon.setImageTintList(android.content.res.ColorStateList.valueOf(Color.RED));
             btnConfirm.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.RED));
         }
-
         btnConfirm.setOnClickListener(v -> {
             dialog.dismiss();
             if (onConfirm != null) onConfirm.run();
         });
-
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().getAttributes().windowAnimations = android.R.style.Animation_Dialog;
         }
-
         dialog.show();
     }
 }

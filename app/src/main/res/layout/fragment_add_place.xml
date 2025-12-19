@@ -164,7 +164,12 @@
                     android:text="+ Bấm để tải ảnh chính"
                     android:textColor="#9AA0A6"/>
             </RelativeLayout>
-
+            <EditText
+                android:id="@+id/et_image_url"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Hoặc dán URL ảnh tại đây"
+                android:inputType="textUri" />
             <TextView style="@style/SectionHeader" android:text="MÔ TẢ CHI TIẾT" android:layout_marginTop="20dp" />
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"

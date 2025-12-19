@@ -79,14 +79,7 @@ public class ReviewTabFragment extends BaseFragment {
         // Lấy UserID từ TokenManager (Giả định TokenManager có hàm getUserId)
         String currentUserId = (tokenManager != null) ? tokenManager.getUserId() : null;
 
-        reviewAdapter = new ReviewAdapter(new ArrayList<>(), currentUserId, (review, voteType) -> {
-            // Kiểm tra đăng nhập trước khi Like/Dislike
-            if (!isUserLoggedIn()) {
-                requireLogin();
-                return;
-            }
-            handleVote(review.id, voteType);
-        });
+        reviewAdapter = new ReviewAdapter(new ArrayList<>());
         rv.setAdapter(reviewAdapter);
 
         btnSubmit.setOnClickListener(v -> postReview());

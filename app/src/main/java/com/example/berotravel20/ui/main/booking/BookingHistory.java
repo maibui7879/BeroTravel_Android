@@ -188,18 +188,16 @@ public class BookingHistory extends BaseFragment implements BookingHistoryAdapte
     public void onPay(Booking booking) {
         if (booking == null || booking.place == null) return;
 
+        // Chuyển đổi ngày ISO sang Long để truyền vào ReviewReservationFragment
         long start = parseIsoDate(booking.bookingDateTime);
         long end = parseIsoDate(booking.checkoutDateTime);
-
-        // CHỮA CHÁY: Chia giá cho 24 trước khi truyền vào Fragment thanh toán
-        int fixedPrice = (int) (booking.place.price / 24);
 
         ReviewReservationFragment review = ReviewReservationFragment.newInstance(
                 booking.place.id,
                 booking.place.name,
                 booking.place.address,
                 booking.place.imageUrl,
-                fixedPrice, // Sử dụng giá đã sửa
+                (int) booking.place.price,
                 booking.numberOfPeople,
                 start,
                 end
