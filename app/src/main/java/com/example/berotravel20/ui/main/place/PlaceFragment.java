@@ -144,6 +144,11 @@ public class PlaceFragment extends BaseFragment {
         tvPrice.setText(place.price == 0 ? "Miễn phí" : String.format("%,.0f đ", place.price));
         Glide.with(this).load(place.imageUrl).placeholder(R.drawable.placeholder_image).into(imgHeader);
         List<String> images = new ArrayList<>();
+        if (place.category != null && BOOKING_LABEL_CATEGORIES.contains(place.category.toLowerCase())) {
+            btnAction.setText("Đặt ngay");
+        } else {
+            btnAction.setText("Chi tiết");
+        }
         if (place.imgSet != null) images.addAll(place.imgSet);
         photoAdapter.setData(images);
     }

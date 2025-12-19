@@ -37,6 +37,7 @@ import com.example.berotravel20.ui.main.place.PlaceFragment;
 import com.example.berotravel20.ui.map.LocationHelper;
 import com.example.berotravel20.ui.map.MapActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -47,14 +48,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeFragment extends BaseFragment {
     private FavoriteRepository favoriteRepository;
+    private PlaceRepository placeRepository;
+    private LocationHelper locationHelper;
+
     private TextView tvUsername, tvTemperature, tvWeatherDesc, tvHumidity, tvWindSpeed, tvCityName;
     private TextView tvSuggestedTitle;
     private ImageView ivAvatar, ivWeatherIcon;
     private EditText etSearch;
     private View loadingLayout, mainContent;
 
-    private PlaceRepository placeRepository;
-    private LocationHelper locationHelper;
     private double currentLat = 0.0;
     private double currentLng = 0.0;
     private boolean isLocationFound = false;
@@ -83,6 +85,9 @@ public class HomeFragment extends BaseFragment {
         setupAdapters(view);
         setupCategoryEvents(view);
         loadUserProfile();
+
+        // CẬP NHẬT: Lấy danh sách yêu thích ngay khi vào để hiện trái tim đỏ
+        fetchMyFavorites();
 
         if (!isLocationFound) {
             setupLocationLogic(true);
@@ -140,21 +145,10 @@ public class HomeFragment extends BaseFragment {
         );
     }
 
-    private void performSearchLogic() {
-        String query = etSearch.getText().toString().trim();
-        if (!query.isEmpty()) {
-            Intent intent = new Intent(getActivity(), MapActivity.class);
-            intent.putExtra("SEARCH_QUERY", query);
-            startActivity(intent);
-        } else {
-            Toast.makeText(getContext(), "Vui lòng nhập từ khóa", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     private void setupAdapters(View view) {
         MapPlaceAdapter.OnItemClickListener listener = createListener();
 
-        // 1. Suggested (Sử dụng item_place_vertical)
+        // 1. Suggested (Vertical Item)
         View secSuggest = view.findViewById(R.id.secSuggested);
         if (secSuggest != null) {
             RecyclerView rvSuggest = secSuggest.findViewById(R.id.rv_home_list);
@@ -163,12 +157,12 @@ public class HomeFragment extends BaseFragment {
             rvSuggest.setAdapter(suggestAdapter);
         }
 
-        // 2. Hotels (Sử dụng item ngang mặc định - item_place_result)
+        // 2. Hotels
         hotelAdapter = new MapPlaceAdapter(getContext(), listener);
         setupSection(view.findViewById(R.id.secHotels), "Khách sạn gần bạn",
                 LinearLayoutManager.VERTICAL, hotelAdapter);
 
-        // 3. Restaurants (SỬA LẠI: Sử dụng item_place_vertical giống Suggested)
+        // 3. Restaurants (Vertical Item)
         restaurantAdapter = new MapPlaceAdapter(getContext(), R.layout.item_place_vertical, listener);
         setupSection(view.findViewById(R.id.secRestaurants), "Nhà hàng ngon gần bạn",
                 LinearLayoutManager.HORIZONTAL, restaurantAdapter);
@@ -183,6 +177,85 @@ public class HomeFragment extends BaseFragment {
         if (rv != null) {
             rv.setLayoutManager(new LinearLayoutManager(getContext(), orientation, false));
             rv.setAdapter(adapter);
+        }
+    }
+
+    // CẬP NHẬT: Logic xử lý yêu thích tương đương MapActivity
+    private MapPlaceAdapter.OnItemClickListener createListener() {
+        return new MapPlaceAdapter.OnItemClickListener() {
+            @Override
+            public void onFavoriteClick(Place p) {
+                if (!isUserLoggedIn()) {
+                    requireLogin();
+                    return;
+                }
+
+                favoriteRepository.toggleFavorite(p.id, new DataCallback<FavoriteResponse>() {
+                    @Override
+                    public void onSuccess(FavoriteResponse data) {
+                        // Cập nhật trái tim đỏ/rỗng cục bộ cho toàn bộ adapter
+                        if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
+                        if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
+                        if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
+
+                        showSuccess(data.message);
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        showError("Lỗi: " + msg);
+                    }
+                });
+            }
+
+            @Override
+            public void onItemClick(Place p) {
+                getParentFragmentManager().beginTransaction()
+                        .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
+                        .replace(R.id.base_container, PlaceFragment.newInstance(p.id))
+                        .addToBackStack(null)
+                        .commit();
+            }
+
+            @Override
+            public void onDirectionClick(Place p) {
+                Intent intent = new Intent(getActivity(), MapActivity.class);
+                intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
+                intent.putExtra("TARGET_LAT", p.latitude);
+                intent.putExtra("TARGET_LNG", p.longitude);
+                intent.putExtra("TARGET_NAME", p.name);
+                startActivity(intent);
+            }
+        };
+    }
+
+    // CẬP NHẬT: Hàm lấy danh sách favorite IDs
+    private void fetchMyFavorites() {
+        if (!isUserLoggedIn()) return;
+        favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
+            @Override
+            public void onSuccess(List<Place> places) {
+                if (isAdded() && places != null) {
+                    List<String> favIds = new ArrayList<>();
+                    for (Place p : places) favIds.add(p.id);
+
+                    if (suggestAdapter != null) suggestAdapter.setFavoriteIds(favIds);
+                    if (hotelAdapter != null) hotelAdapter.setFavoriteIds(favIds);
+                    if (restaurantAdapter != null) restaurantAdapter.setFavoriteIds(favIds);
+                }
+            }
+            @Override public void onError(String message) {}
+        });
+    }
+
+    private void performSearchLogic() {
+        String query = etSearch.getText().toString().trim();
+        if (!query.isEmpty()) {
+            Intent intent = new Intent(getActivity(), MapActivity.class);
+            intent.putExtra("SEARCH_QUERY", query);
+            startActivity(intent);
+        } else {
+            Toast.makeText(getContext(), "Vui lòng nhập từ khóa", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -285,55 +358,6 @@ public class HomeFragment extends BaseFragment {
                 if (isAdded()) Toast.makeText(getContext(), "Không tìm thấy địa điểm", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private MapPlaceAdapter.OnItemClickListener createListener() {
-        return new MapPlaceAdapter.OnItemClickListener() {
-            @Override
-            public void onFavoriteClick(Place p) {
-                // 1. Kiểm tra đăng nhập
-                if (!isUserLoggedIn()) {
-                    requireLogin(); // Hàm này bạn đã có trong BaseFragment
-                    return;
-                }
-
-                // 2. Gọi API Toggle
-                favoriteRepository.toggleFavorite(p.id, new DataCallback<FavoriteResponse>() {
-                    @Override
-                    public void onSuccess(FavoriteResponse data) {
-                        if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
-                        if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
-                        if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
-
-                        showSuccess(data.message);
-                    }
-
-                    @Override
-                    public void onError(String msg) {
-                        showError("Không thể cập nhật yêu thích: " + msg);
-                    }
-                });
-            }
-
-            @Override
-            public void onItemClick(Place p) {
-                getParentFragmentManager().beginTransaction()
-                        .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
-                        .replace(R.id.base_container, PlaceFragment.newInstance(p.id))
-                        .addToBackStack(null)
-                        .commit();
-            }
-
-            @Override
-            public void onDirectionClick(Place p) {
-                Intent intent = new Intent(getActivity(), MapActivity.class);
-                intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
-                intent.putExtra("TARGET_LAT", p.latitude);
-                intent.putExtra("TARGET_LNG", p.longitude);
-                intent.putExtra("TARGET_NAME", p.name);
-                startActivity(intent);
-            }
-        };
     }
 
     private void fetchWeather(double lat, double lon) {

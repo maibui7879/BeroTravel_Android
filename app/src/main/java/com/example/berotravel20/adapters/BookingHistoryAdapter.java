@@ -56,7 +56,7 @@ public class BookingHistoryAdapter extends RecyclerView.Adapter<BookingHistoryAd
                     .into(holder.imgPlace);
         }
 
-        holder.tvPrice.setText(String.format(Locale.getDefault(), "%,.0f đ", booking.totalPrice));
+        holder.tvPrice.setText(String.format(Locale.getDefault(), "%,.0f đ", (booking.totalPrice / 24)*105/100));
 
         // Cắt chuỗi ngày ISO (yyyy-MM-dd)
         if (booking.bookingDateTime != null && booking.bookingDateTime.length() >= 10) {

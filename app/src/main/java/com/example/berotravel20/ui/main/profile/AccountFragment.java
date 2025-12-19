@@ -8,36 +8,37 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
-import com.example.berotravel20.adapters.FavoriteAdapter;
-import com.example.berotravel20.data.common.DataCallback; // Import Callback
+import com.example.berotravel20.adapters.MapPlaceAdapter;
+import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.local.TokenManager;
-import com.example.berotravel20.data.model.Place.Place; // Import Place
+import com.example.berotravel20.data.model.Favorite.FavoriteResponse;
+import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.User.User;
-import com.example.berotravel20.data.repository.FavoriteRepository; // Import Repo
+import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.ui.common.BaseActivity;
+import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.common.RequestLoginDialog;
+import com.example.berotravel20.ui.main.place.PlaceFragment;
 import com.example.berotravel20.ui.map.MapActivity;
+import com.example.berotravel20.utils.ToastUtils;
 import com.example.berotravel20.viewmodel.ProfileViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class AccountFragment extends Fragment implements RequestLoginDialog.RequestLoginListener {
+public class AccountFragment extends BaseFragment implements RequestLoginDialog.RequestLoginListener {
 
     private ProfileViewModel viewModel;
-
-    // Repository để lấy danh sách yêu thích
     private FavoriteRepository favoriteRepository;
 
     // UI Components
@@ -45,7 +46,10 @@ public class AccountFragment extends Fragment implements RequestLoginDialog.Requ
     private ImageView ivAvatar, ivCover;
     private Button btnLogout;
     private RecyclerView rvFavorites;
-    private FavoriteAdapter favoriteAdapter;
+    private View layoutEmptyState;
+
+    // Sử dụng Adapter chung để đồng bộ giao diện
+    private MapPlaceAdapter placeAdapter;
 
     @Nullable
     @Override
@@ -56,36 +60,34 @@ public class AccountFragment extends Fragment implements RequestLoginDialog.Requ
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        // 1. Khởi tạo Repository
         favoriteRepository = new FavoriteRepository();
 
-        // 2. KIỂM TRA ĐĂNG NHẬP
+        // 1. Kiểm tra trạng thái đăng nhập
         if (!isUserLoggedIn()) {
             showLoginRequestDialog();
             return;
         }
 
-        // 3. Ánh xạ View
+        // 2. Khởi tạo UI
         initViews(view);
 
-        // 4. Setup RecyclerView & Adapter
+        // 3. Thiết lập danh sách RecyclerView
         setupRecyclerView();
 
-        // 5. Setup ViewModel (Cho thông tin User cơ bản)
+        // 4. Kết nối dữ liệu User qua ViewModel
         setupViewModel();
 
-        // 6. [QUAN TRỌNG] Tải danh sách yêu thích từ API
+        // 5. Tải dữ liệu địa điểm yêu thích
         loadFavoriteData();
 
-        // 7. Setup Events
+        // 6. Thiết lập các sự kiện click
         setupEvents();
     }
 
-    // [MỚI] Khi quay lại tab này (ví dụ từ Map về), reload lại danh sách để cập nhật nếu có thay đổi
     @Override
     public void onResume() {
         super.onResume();
+        // Cập nhật lại danh sách mỗi khi quay lại tab Profile
         if (isUserLoggedIn()) {
             loadFavoriteData();
         }
@@ -104,83 +106,105 @@ public class AccountFragment extends Fragment implements RequestLoginDialog.Requ
         tvFavoriteCount = view.findViewById(R.id.tvFavoriteCount);
 
         rvFavorites = view.findViewById(R.id.rvFavorites);
+        layoutEmptyState = view.findViewById(R.id.layout_empty_state); // Layout hiện khi danh sách trống
         btnLogout = view.findViewById(R.id.btnLogout);
     }
 
     private void setupRecyclerView() {
-        favoriteAdapter = new FavoriteAdapter();
-
-        // Listener xử lý sự kiện click
-        favoriteAdapter.setListener(new FavoriteAdapter.OnFavoriteActionListener() {
+        // Khởi tạo adapter với listener xử lý 3 hành động chính
+        placeAdapter = new MapPlaceAdapter(getContext(), new MapPlaceAdapter.OnItemClickListener() {
             @Override
-            public void onPlaceClick(Place place) {
-                // Xử lý xem chi tiết
-                Toast.makeText(getContext(), "Chi tiết: " + place.name, Toast.LENGTH_SHORT).show();
+            public void onFavoriteClick(Place place) {
+                // Xử lý bỏ yêu thích trực tiếp
+                handleFavoriteToggle(place);
+            }
+
+            @Override
+            public void onItemClick(Place place) {
+                // Điều hướng sang trang chi tiết địa điểm
+                if (getActivity() instanceof BaseActivity) {
+                    ((BaseActivity) getActivity()).navigateToDetail(PlaceFragment.newInstance(place.id));
+                }
             }
 
             @Override
             public void onDirectionClick(Place place) {
-                // Chuyển sang MapActivity với chế độ chỉ đường
+                // Mở MapActivity ở chế độ chỉ đường từ vị trí hiện tại đến địa điểm này
                 Intent intent = new Intent(requireContext(), MapActivity.class);
                 intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
                 intent.putExtra("TARGET_LAT", place.latitude);
                 intent.putExtra("TARGET_LNG", place.longitude);
                 intent.putExtra("TARGET_NAME", place.name);
-                intent.putExtra("TARGET_ADDR", place.address);
                 startActivity(intent);
             }
         });
 
         rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvFavorites.setAdapter(favoriteAdapter);
+        rvFavorites.setAdapter(placeAdapter);
+    }
+
+    private void loadFavoriteData() {
+        favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
+            @Override
+            public void onSuccess(List<Place> places) {
+                if (isAdded() && places != null) {
+                    // Cập nhật danh sách hiển thị
+                    placeAdapter.setData(places);
+
+                    // Logic quan trọng: Đánh dấu đỏ cho tất cả icon trái tim trong danh sách này
+                    List<String> ids = new ArrayList<>();
+                    for (Place p : places) ids.add(p.id);
+                    placeAdapter.setFavoriteIds(ids);
+
+                    // Cập nhật số lượng trên header
+                    tvFavoriteCount.setText(String.valueOf(places.size()));
+
+                    // Hiển thị Empty State nếu không có dữ liệu
+                    if (layoutEmptyState != null) {
+                        layoutEmptyState.setVisibility(places.isEmpty() ? View.VISIBLE : View.GONE);
+                    }
+                }
+            }
+
+            @Override public void onError(String message) { }
+        });
+    }
+
+    private void handleFavoriteToggle(Place place) {
+        // Gọi API toggle. Ở màn hình Profile, hành động này tương đương với "Bỏ yêu thích"
+        favoriteRepository.toggleFavorite(place.id, new DataCallback<FavoriteResponse>() {
+            @Override
+            public void onSuccess(FavoriteResponse data) {
+                // Reload lại dữ liệu để item bị xóa khỏi danh sách ngay lập tức
+                loadFavoriteData();
+                showSuccess("Đã xóa khỏi danh sách yêu thích");
+            }
+
+            @Override
+            public void onError(String message) {
+                showError(message);
+            }
+        });
     }
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
-        // Chỉ quan sát thông tin User (Tên, Avatar, Bio...)
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 tvUserName.setText(user.name);
                 if (user.email != null) tvUserEmail.setText(user.email);
-                tvUserBio.setText((user.bio != null && !user.bio.isEmpty()) ? user.bio : "Chưa có giới thiệu.");
+                tvUserBio.setText((user.bio != null && !user.bio.isEmpty()) ? user.bio : "Khám phá thế giới cùng BeroTravel.");
 
-                if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
-                    Glide.with(this).load(user.avatarUrl).placeholder(R.drawable.account_icon).into(ivAvatar);
-                }
-                if (user.coverUrl != null && !user.coverUrl.isEmpty()) {
+                // Load ảnh Avatar và Cover
+                Glide.with(this).load(user.avatarUrl).placeholder(R.drawable.account_icon).circleCrop().into(ivAvatar);
+                if (user.coverUrl != null) {
                     Glide.with(this).load(user.coverUrl).placeholder(R.drawable.background).centerCrop().into(ivCover);
                 }
             }
         });
 
-        // Load thông tin user
         viewModel.loadUserProfile();
-    }
-
-    // [HÀM MỚI] Gọi API lấy danh sách yêu thích và hiển thị lên RecyclerView
-    private void loadFavoriteData() {
-        favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> places) {
-                if (places != null) {
-                    // Cập nhật Adapter
-                    if (favoriteAdapter != null) {
-                        favoriteAdapter.setPlaces(places);
-                    }
-                    // Cập nhật số lượng trên UI
-                    if (tvFavoriteCount != null) {
-                        tvFavoriteCount.setText(String.valueOf(places.size()));
-                    }
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                // Có thể log lỗi hoặc hiện Toast nếu cần thiết
-                // Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     private void setupEvents() {
@@ -209,29 +233,15 @@ public class AccountFragment extends Fragment implements RequestLoginDialog.Requ
         bottomSheet.show(getParentFragmentManager(), "EditProfileBottomSheet");
     }
 
-    // --- LOGIC AUTH ---
-    private boolean isUserLoggedIn() {
-        if (getContext() == null) return false;
-        String token = TokenManager.getInstance(requireContext()).getToken();
-        return token != null && !token.isEmpty();
-    }
-
     private void showLoginRequestDialog() {
         RequestLoginDialog dialog = RequestLoginDialog.newInstance();
         dialog.setListener(this);
         dialog.show(getChildFragmentManager(), "RequestLoginDialog");
     }
 
-    @Override
-    public void onLoginClick() {
-        if (getActivity() != null) {
-            Intent intent = new Intent(requireContext(), AuthActivity.class);
-            startActivity(intent);
-        }
+    @Override public void onLoginClick() {
+        startActivity(new Intent(requireContext(), AuthActivity.class));
     }
 
-    @Override
-    public void onCancelClick() {
-        // Tùy chọn: Xử lý khi user hủy dialog
-    }
+    @Override public void onCancelClick() { }
 }

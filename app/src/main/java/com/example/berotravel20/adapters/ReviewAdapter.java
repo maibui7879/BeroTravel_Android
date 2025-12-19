@@ -67,10 +67,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
             imgAvatar = itemView.findViewById(R.id.img_avatar);
             tvName = itemView.findViewById(R.id.tv_username);
             tvComment = itemView.findViewById(R.id.tv_comment);
-            tvVoteCount = itemView.findViewById(R.id.tv_vote_count);
             ratingBar = itemView.findViewById(R.id.item_rating_bar);
-            btnLike = itemView.findViewById(R.id.btn_like);
-            btnDislike = itemView.findViewById(R.id.btn_dislike);
             voteRepository = new VoteRepository();
         }
 

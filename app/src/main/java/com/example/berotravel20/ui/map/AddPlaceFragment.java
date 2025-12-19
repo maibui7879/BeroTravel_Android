@@ -1,6 +1,7 @@
 package com.example.berotravel20.ui.map;
 
-import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,13 +9,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Place.Place;
@@ -28,6 +32,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -113,7 +118,6 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         view.findViewById(R.id.btn_select_main_image).setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         view.findViewById(R.id.btn_save_place).setOnClickListener(v -> savePlace());
 
-        // Handle Exit thông minh để không thoát App
         View.OnClickListener closeAction = v -> handleExit();
         view.findViewById(R.id.btn_cancel).setOnClickListener(closeAction);
         view.findViewById(R.id.btn_close).setOnClickListener(closeAction);
@@ -138,13 +142,12 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                     com.bumptech.glide.Glide.with(AddPlaceFragment.this).load(place.imageUrl).into(ivMainPreview);
                 }
             }
-            @Override public void onError(String msg) { hideLoading(); showError(msg); }
+            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi", msg, false, null); }
         });
     }
 
     private void handleExit() {
         if (getActivity() == null) return;
-        // Nếu có BackStack (chế độ edit), pop nó ra. Nếu không (mở từ Map), đóng activity.
         if (getParentFragmentManager().getBackStackEntryCount() > 0) {
             getParentFragmentManager().popBackStack();
         } else {
@@ -202,7 +205,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         String vnCat = spinnerCategory.getText().toString().trim();
 
         if (name.isEmpty() || address.isEmpty() || vnCat.isEmpty()) {
-            showSimpleDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc."); return;
+            showCustomDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ các trường bắt buộc.", false, null); return;
         }
 
         Place.Request req = new Place.Request();
@@ -216,18 +219,50 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             @Override
             public void onSuccess(Place data) {
                 hideLoading();
-                new AlertDialog.Builder(requireContext()).setTitle("Thành công")
-                        .setMessage(isEditMode ? "Cập nhật địa điểm thành công!" : "Đã lưu địa điểm mới!")
-                        .setPositiveButton("Xác nhận", (d, w) -> handleExit()).setCancelable(false).show();
+                String msg = isEditMode ? "Cập nhật địa điểm thành công!" : "Đã lưu địa điểm mới!";
+                showCustomDialog("Thành công", msg, true, () -> handleExit());
             }
-            @Override public void onError(String msg) { hideLoading(); showSimpleDialog("Lỗi hệ thống", msg); }
+            @Override public void onError(String msg) { hideLoading(); showCustomDialog("Lỗi hệ thống", msg, false, null); }
         };
 
         if (isEditMode) repository.updatePlace(mEditPlaceId, req, callback);
         else repository.createPlace(req, callback);
     }
 
-    private void showSimpleDialog(String t, String m) {
-        new AlertDialog.Builder(requireContext()).setTitle(t).setMessage(m).setPositiveButton("Đóng", null).show();
+    /**
+     * Hiển thị Custom Dialog thay thế cho AlertDialog mặc định
+     */
+    private void showCustomDialog(String title, String message, boolean isSuccess, Runnable onConfirm) {
+        if (getActivity() == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_dialog_success, null);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(requireContext()).setView(dialogView).create();
+
+        TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
+        TextView tvMsg = dialogView.findViewById(R.id.tv_dialog_message);
+        ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_icon);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_dialog_confirm);
+
+        tvTitle.setText(title);
+        tvMsg.setText(message);
+
+        // Đổi Icon và Màu nếu là thông báo lỗi
+        if (!isSuccess) {
+            ivIcon.setImageResource(android.R.drawable.ic_dialog_alert);
+            ivIcon.setImageTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+            btnConfirm.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+        }
+
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (onConfirm != null) onConfirm.run();
+        });
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().getAttributes().windowAnimations = android.R.style.Animation_Dialog;
+        }
+
+        dialog.show();
     }
 }

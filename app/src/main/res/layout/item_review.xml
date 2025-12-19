@@ -71,47 +71,4 @@
         android:lineSpacingExtra="2dp"
         android:textColor="#333"
         android:textSize="14sp"/>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Đánh giá này có hữu ích với bạn?"
-        android:textSize="12sp"
-        android:textStyle="italic"
-        android:textColor="#999"
-        android:gravity="end"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end|center_vertical"
-        android:layout_marginTop="6dp">
-
-        <ImageView
-            android:id="@+id/btn_like"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@android:drawable/btn_star_big_on"
-            app:tint="#888"/>
-
-        <TextView
-            android:id="@+id/tv_vote_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:paddingHorizontal="10dp"
-            android:textStyle="bold"
-            android:textColor="#444"
-            android:textSize="14sp"/>
-
-        <ImageView
-            android:id="@+id/btn_dislike"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@android:drawable/ic_delete"
-            app:tint="#888"
-            android:rotation="180"/>
-    </LinearLayout>
 </LinearLayout>
