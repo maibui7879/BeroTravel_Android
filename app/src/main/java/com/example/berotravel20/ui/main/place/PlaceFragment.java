@@ -24,6 +24,7 @@ import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.main.booking.BookingFragment;
+import com.example.berotravel20.ui.map.AddPlaceFragment;
 import com.example.berotravel20.ui.map.MapActivity;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,17 +37,14 @@ public class PlaceFragment extends BaseFragment {
     private PlaceRepository placeRepository;
     private FavoriteRepository favoriteRepository;
 
-    // UI Components
     private ProgressBar pbLoading;
     private View layoutContent;
     private TextView tvTitle, tvLocation, tvDescription, tvPrice;
     private Button btnAction, btnDirection;
     private ImageView imgHeader;
-    private ImageButton btnFavorite;
+    private ImageButton btnFavorite, btnEdit;
 
-    // State
     private boolean isFavorite = false;
-
     private final List<String> BOOKING_LABEL_CATEGORIES = Arrays.asList(
             "hotel", "motel", "resort", "guest_house", "hostel",
             "restaurant", "bar", "cafe", "fast_food", "pub"
@@ -90,20 +88,27 @@ public class PlaceFragment extends BaseFragment {
         btnAction = view.findViewById(R.id.btn_booking);
         btnDirection = view.findViewById(R.id.btn_direction);
         imgHeader = view.findViewById(R.id.img_header);
-        btnFavorite = view.findViewById(R.id.btn_favorite); // ĐÃ KHÔI PHỤC
+        btnFavorite = view.findViewById(R.id.btn_favorite);
+        btnEdit = view.findViewById(R.id.btn_edit_place);
 
         RecyclerView rvPhotos = view.findViewById(R.id.rv_photos);
         rvPhotos.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         photoAdapter = new PhotoAdapter(pos -> navigateToBooking(1));
         rvPhotos.setAdapter(photoAdapter);
 
-        // Events
-        view.findViewById(R.id.tv_see_all_photos).setOnClickListener(v -> navigateToBooking(1));
+        // Sự kiện nút Sửa: Dùng navigateToDetail để lưu vào BackStack
+        btnEdit.setOnClickListener(v -> {
+            if (currentPlace != null) {
+                replaceFragment(AddPlaceFragment.newInstanceForEdit(
+                        currentPlace.id, currentPlace.latitude, currentPlace.longitude));
+            }
+        });
+
+        btnFavorite.setOnClickListener(v -> toggleFavorite());
         btnAction.setOnClickListener(v -> navigateToBooking(2));
-        btnFavorite.setOnClickListener(v -> toggleFavorite()); // ĐÃ KHÔI PHỤC
 
         Toolbar toolbar = view.findViewById(R.id.toolbar);
-        if (toolbar != null) toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
+        if (toolbar != null) toolbar.setNavigationOnClickListener(v -> onBack());
 
         btnDirection.setOnClickListener(v -> {
             if (currentPlace != null) {
@@ -118,23 +123,17 @@ public class PlaceFragment extends BaseFragment {
     }
 
     private void loadPlaceDetails(String id) {
-        if (pbLoading != null) pbLoading.setVisibility(View.VISIBLE);
+        showLoading();
         placeRepository.getPlaceById(id, new DataCallback<Place>() {
             @Override
             public void onSuccess(Place place) {
-                if (!isAdded() || getView() == null) return;
-                if (pbLoading != null) pbLoading.setVisibility(View.GONE);
+                hideLoading();
                 layoutContent.setVisibility(View.VISIBLE);
                 currentPlace = place;
                 displayData(place);
-                checkFavoriteStatus(); // ĐÃ KHÔI PHỤC
+                checkFavoriteStatus();
             }
-            @Override
-            public void onError(String msg) {
-                if (!isAdded()) return;
-                if (pbLoading != null) pbLoading.setVisibility(View.GONE);
-                showError(msg);
-            }
+            @Override public void onError(String msg) { hideLoading(); showError(msg); }
         });
     }
 
@@ -143,29 +142,18 @@ public class PlaceFragment extends BaseFragment {
         tvLocation.setText(place.address);
         tvDescription.setText(place.description);
         tvPrice.setText(place.price == 0 ? "Miễn phí" : String.format("%,.0f đ", place.price));
-
-        if (place.category != null && BOOKING_LABEL_CATEGORIES.contains(place.category.toLowerCase().trim())) {
-            btnAction.setText("Đặt ngay");
-        } else {
-            btnAction.setText("Xem chi tiết");
-        }
-
         Glide.with(this).load(place.imageUrl).placeholder(R.drawable.placeholder_image).into(imgHeader);
         List<String> images = new ArrayList<>();
         if (place.imgSet != null) images.addAll(place.imgSet);
         photoAdapter.setData(images);
     }
 
-    // --- LOGIC FAVORITE MỚI ---
     private void toggleFavorite() {
         if (!isUserLoggedIn()) { requireLogin(); return; }
-        if (mPlaceId == null) return;
-
         favoriteRepository.toggleFavorite(mPlaceId, new DataCallback<FavoriteResponse>() {
-            @Override
-            public void onSuccess(FavoriteResponse data) {
+            @Override public void onSuccess(FavoriteResponse data) {
                 isFavorite = !isFavorite;
-                updateFavoriteIcon();
+                btnFavorite.setImageResource(isFavorite ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
                 showSuccess(data.message);
             }
             @Override public void onError(String msg) { showError(msg); }
@@ -175,34 +163,22 @@ public class PlaceFragment extends BaseFragment {
     private void checkFavoriteStatus() {
         if (!isUserLoggedIn() || mPlaceId == null) return;
         favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> favList) {
+            @Override public void onSuccess(List<Place> favList) {
                 if (favList != null) {
-                    isFavorite = false;
-                    for (Place p : favList) {
-                        if (mPlaceId.equals(p.id)) { isFavorite = true; break; }
-                    }
-                    updateFavoriteIcon();
+                    for (Place p : favList) if (mPlaceId.equals(p.id)) { isFavorite = true; break; }
+                    btnFavorite.setImageResource(isFavorite ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
                 }
             }
             @Override public void onError(String msg) {}
         });
     }
 
-    private void updateFavoriteIcon() {
-        btnFavorite.setImageResource(isFavorite ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
-    }
-
-    // --- LOGIC NAVIGATE ---
     private void navigateToBooking(int tabIndex) {
         if (!isUserLoggedIn()) { requireLogin(); return; }
         if (currentPlace == null) return;
         ArrayList<String> images = new ArrayList<>();
         if (currentPlace.imgSet != null) images.addAll(currentPlace.imgSet);
-
-        BookingFragment fragment = BookingFragment.newInstance(
-                currentPlace.id, currentPlace.name, currentPlace.address,
-                currentPlace.imageUrl, (int)currentPlace.price,currentPlace.category, images, tabIndex);
-        replaceFragment(fragment);
+        replaceFragment(BookingFragment.newInstance(currentPlace.id, currentPlace.name, currentPlace.address,
+                currentPlace.imageUrl, (int)currentPlace.price, currentPlace.category, images, tabIndex));
     }
 }

@@ -20,12 +20,22 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupFullList"
-            android:layout_width="match_parent"
+        <com.google.android.material.chip.Chip
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:chipSpacing="8dp"
-            app:singleSelection="true"/>
+
+            app:chipBackgroundColor="@color/chip_bg_selector"
+            app:chipStrokeColor="@color/chip_stroke_selector"
+            app:chipStrokeWidth="1dp"
+
+            app:rippleColor="@color/teal_700"
+            android:textColor="@color/chip_text_color"
+
+            app:checkedIconVisible="true"
+            app:checkedIconTint="@android:color/white" />
 
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

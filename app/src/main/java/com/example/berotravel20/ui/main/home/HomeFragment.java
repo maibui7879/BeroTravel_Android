@@ -23,11 +23,13 @@ import com.example.berotravel20.R;
 import com.example.berotravel20.adapters.MapPlaceAdapter;
 import com.example.berotravel20.data.api.WeatherApiService;
 import com.example.berotravel20.data.common.DataCallback;
+import com.example.berotravel20.data.model.Favorite.FavoriteResponse;
 import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.Place.PlaceResponse;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.data.model.Weather.WeatherResponse;
 import com.example.berotravel20.data.remote.RetrofitClient;
+import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.main.notification.NotificationFragment;
@@ -44,7 +46,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeFragment extends BaseFragment {
-
+    private FavoriteRepository favoriteRepository;
     private TextView tvUsername, tvTemperature, tvWeatherDesc, tvHumidity, tvWindSpeed, tvCityName;
     private TextView tvSuggestedTitle;
     private ImageView ivAvatar, ivWeatherIcon;
@@ -73,7 +75,7 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
+        favoriteRepository = new FavoriteRepository();
         placeRepository = new PlaceRepository();
         locationHelper = new LocationHelper(getActivity());
 
@@ -289,9 +291,28 @@ public class HomeFragment extends BaseFragment {
         return new MapPlaceAdapter.OnItemClickListener() {
             @Override
             public void onFavoriteClick(Place p) {
-                if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
-                if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
-                if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
+                // 1. Kiểm tra đăng nhập
+                if (!isUserLoggedIn()) {
+                    requireLogin(); // Hàm này bạn đã có trong BaseFragment
+                    return;
+                }
+
+                // 2. Gọi API Toggle
+                favoriteRepository.toggleFavorite(p.id, new DataCallback<FavoriteResponse>() {
+                    @Override
+                    public void onSuccess(FavoriteResponse data) {
+                        if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
+                        if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
+                        if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
+
+                        showSuccess(data.message);
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        showError("Không thể cập nhật yêu thích: " + msg);
+                    }
+                });
             }
 
             @Override

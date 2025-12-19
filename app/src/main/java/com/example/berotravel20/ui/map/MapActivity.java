@@ -15,6 +15,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,7 +34,7 @@ import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
 import com.example.berotravel20.data.repository.RouteRepository;
 import com.example.berotravel20.ui.auth.AuthActivity;
-import com.example.berotravel20.ui.common.BaseActivity; // Import BaseActivity
+import com.example.berotravel20.ui.common.BaseActivity;
 import com.example.berotravel20.ui.common.RequestLoginDialog;
 import com.example.berotravel20.utils.CategoryUtils;
 import com.example.berotravel20.utils.MapUtils;
@@ -42,6 +43,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -51,10 +54,10 @@ import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MapActivity extends AppCompatActivity implements
         OnMapReadyCallback,
+        GoogleMap.OnMapClickListener,
         MapNavigationManager.NavigationListener,
         RequestLoginDialog.RequestLoginListener {
 
@@ -75,14 +78,12 @@ public class MapActivity extends AppCompatActivity implements
     private ChipGroup chipGroupFilter;
     private RelativeLayout groupMainUI;
 
-    // UI Search Result
     private LinearLayout layoutSearchResults;
     private TextView tvResultCount;
     private MapPlaceAdapter placeAdapter;
     private RecyclerView rvMapResults;
     private MaterialButton btnLoadMore;
 
-    // UI Direction
     private LinearLayout layoutDirections;
     private DirectionStepAdapter stepAdapter;
     private TextView tvDuration, tvDistance;
@@ -98,16 +99,17 @@ public class MapActivity extends AppCompatActivity implements
     private int currentRadius = 5;
     private int tempSelectedRadius = 5;
 
-    // Pagination
     private int currentPage = 1;
     private int totalPages = 1;
     private boolean isLoadingMore = false;
 
-    // Navigation
     private Place currentDestination;
     private String currentTransportProfile = "driving-car";
     private boolean isNavigating = false;
     private boolean isFetchingRoute = false;
+
+    private GoogleMap mGoogleMap;
+    private Marker tempMarker;
 
     private final int[] RADIUS_OPTIONS = {1, 2, 5, 10, 15, 20, 30, 50};
     private final String[] POPULAR_FILTERS = {"restaurant", "cafe", "hotel", "atm", "gas_station", "hospital"};
@@ -117,7 +119,6 @@ public class MapActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        // Init
         mapHelper = new MapHelper(this);
         locationHelper = new LocationHelper(this);
         navigationManager = new MapNavigationManager(this);
@@ -138,6 +139,12 @@ public class MapActivity extends AppCompatActivity implements
         groupMainUI = findViewById(R.id.groupMainUI);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
+        // FIX BUG: Chặn chạm xuyên thấu từ SearchBar xuống Map
+        View topContainer = findViewById(R.id.top_container);
+        if (topContainer != null) topContainer.setOnClickListener(v -> {});
+        View cardSearch = findViewById(R.id.cardSearch);
+        if (cardSearch != null) cardSearch.setOnClickListener(v -> {});
+
         etSearch = findViewById(R.id.etSearchMap);
         etSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
@@ -148,14 +155,27 @@ public class MapActivity extends AppCompatActivity implements
             return false;
         });
 
+        findViewById(R.id.btnSearchIcon).setOnClickListener(v -> {
+            performSearch();
+            MapUtils.hideKeyboard(this);
+        });
+
         findViewById(R.id.btnMyLocation).setOnClickListener(v -> {
             if (currentUserLocation != null)
                 mapHelper.moveCamera(new LatLng(currentUserLocation.getLatitude(), currentUserLocation.getLongitude()), 15f);
             else checkAndGetLocation();
         });
 
+        // --- CẤU HÌNH BOTTOM SHEET ĐỂ KÉO ĐƯỢC 50% ---
         LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+
+        // 1. QUAN TRỌNG: Tắt fitToContents để bật trạng thái HALF_EXPANDED
+        bottomSheetBehavior.setFitToContents(false);
+
+        // 2. Đặt tỉ lệ 50% (0.5) cho trạng thái HALF_EXPANDED
+        bottomSheetBehavior.setHalfExpandedRatio(0.5f);
+
         bottomSheetBehavior.setPeekHeight(MapUtils.dpToPx(this, 240));
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
@@ -165,33 +185,17 @@ public class MapActivity extends AppCompatActivity implements
         rvMapResults = findViewById(R.id.rvMapResults);
         rvMapResults.setLayoutManager(new LinearLayoutManager(this));
 
-        // --- CẬP NHẬT LOGIC CLICK: QUAY VỀ BASE_ACTIVITY ĐỂ MỞ FRAGMENT ---
         placeAdapter = new MapPlaceAdapter(this, new MapPlaceAdapter.OnItemClickListener() {
-            @Override
-            public void onFavoriteClick(Place place) {
-                handleFavoriteToggle(place);
-            }
-
+            @Override public void onFavoriteClick(Place place) { handleFavoriteToggle(place); }
             @Override
             public void onItemClick(Place place) {
-                // Tạo Intent quay về BaseActivity
                 Intent intent = new Intent(MapActivity.this, BaseActivity.class);
-
-                // Gửi dữ liệu theo đúng cấu trúc BaseActivity yêu cầu
                 intent.putExtra("NAVIGATE_TO", "PLACE_DETAIL");
                 intent.putExtra("PLACE_ID", place.id);
-
-                // Flags giúp quay về Activity hiện tại (nếu đang chạy ngầm) mà không tạo mới
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
                 startActivity(intent);
-                finish(); // Đóng MapActivity
             }
-
-            @Override
-            public void onDirectionClick(Place place) {
-                enterPreviewDirectionMode(place);
-            }
+            @Override public void onDirectionClick(Place place) { enterPreviewDirectionMode(place); }
         });
         rvMapResults.setAdapter(placeAdapter);
 
@@ -209,9 +213,9 @@ public class MapActivity extends AppCompatActivity implements
 
         toggleTransportMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                if (checkedId == R.id.btnModeCar) selectTransportMode("driving-car");
-                else if (checkedId == R.id.btnModeBike) selectTransportMode("cycling-regular");
-                else if (checkedId == R.id.btnModeWalk) selectTransportMode("foot-walking");
+                if (checkedId == R.id.btnModeCar) selectTransportProfile("driving-car");
+                else if (checkedId == R.id.btnModeBike) selectTransportProfile("cycling-regular");
+                else if (checkedId == R.id.btnModeWalk) selectTransportProfile("foot-walking");
             }
         });
 
@@ -232,49 +236,54 @@ public class MapActivity extends AppCompatActivity implements
 
     @Override
     public void onMapReady(@NonNull GoogleMap g) {
+        this.mGoogleMap = g;
         mapHelper.setGoogleMap(g);
+        g.setOnMapClickListener(this);
         handleIntentData();
-        if (currentKeyword.isEmpty() && currentDestination == null) {
-            loadAllPlaces();
-        }
+        if (currentKeyword.isEmpty() && currentDestination == null) loadAllPlaces();
         checkAndGetLocation();
     }
 
-    private void handleIntentData() {
-        Intent intent = getIntent();
-        if (intent == null) return;
+    @Override
+    public void onMapClick(@NonNull LatLng latLng) {
+        if (isNavigating) return;
+        if (tempMarker != null) tempMarker.remove();
 
-        if ("DIRECT_TO_PLACE".equals(intent.getStringExtra("ACTION_TYPE"))) {
-            double lat = intent.getDoubleExtra("TARGET_LAT", 0);
-            double lng = intent.getDoubleExtra("TARGET_LNG", 0);
-            String name = intent.getStringExtra("TARGET_NAME");
-            if (lat != 0) {
-                currentDestination = new Place();
-                currentDestination.latitude = lat; currentDestination.longitude = lng; currentDestination.name = name;
-            }
-        }
+        tempMarker = mGoogleMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title("Điểm đã chọn"));
 
-        if (intent.hasExtra("SEARCH_QUERY")) {
-            currentKeyword = intent.getStringExtra("SEARCH_QUERY");
-            if (etSearch != null) etSearch.setText(currentKeyword);
-        }
+        showQuickAddDialog(latLng);
     }
 
-    private void checkAndGetLocation() {
-        locationHelper.getLastLocation(l -> {
-            currentUserLocation = l;
-            if (l == null) return;
-            if (currentDestination == null) {
-                mapHelper.moveCamera(new LatLng(l.getLatitude(), l.getLongitude()), 15f);
-            }
-            if (locationHelper.hasPermission()) mapHelper.enableMyLocationLayer();
+    private void showQuickAddDialog(LatLng latLng) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirm_add_place, null);
+        TextView tvCoords = dialogView.findViewById(R.id.tv_dialog_latlng);
+        tvCoords.setText(String.format("%.5f, %.5f", latLng.latitude, latLng.longitude));
 
-            if (!currentKeyword.isEmpty()) {
-                resetAndCallSearchApi(null, null);
-            } else if (currentDestination != null) {
-                enterPreviewDirectionMode(currentDestination);
-            }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create();
+
+        dialogView.findViewById(R.id.btn_dialog_cancel).setOnClickListener(v -> {
+            if (tempMarker != null) tempMarker.remove();
+            dialog.dismiss();
         });
+
+        dialogView.findViewById(R.id.btn_dialog_add).setOnClickListener(v -> {
+            Intent intent = new Intent(MapActivity.this, BaseActivity.class);
+            intent.putExtra("NAVIGATE_TO", "ADD_PLACE");
+            intent.putExtra("LAT", latLng.latitude);
+            intent.putExtra("LNG", latLng.longitude);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            dialog.dismiss();
+
+        });
+
+        if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        dialog.show();
     }
 
     private void performSearch() {
@@ -296,8 +305,7 @@ public class MapActivity extends AppCompatActivity implements
         showLoading();
         placeRepository.searchNearby(currentUserLocation.getLatitude(), currentUserLocation.getLongitude(), currentRadius, currentKeyword, currentCategory, pageToLoad, limit,
                 new DataCallback<PlaceResponse>() {
-                    @Override
-                    public void onSuccess(PlaceResponse response) {
+                    @Override public void onSuccess(PlaceResponse response) {
                         hideLoading();
                         isLoadingMore = false;
                         if (response != null && response.data != null) handleSearchResponse(response, pageToLoad);
@@ -309,12 +317,11 @@ public class MapActivity extends AppCompatActivity implements
     private void handleSearchResponse(PlaceResponse response, Integer pageToLoad) {
         boolean isFirst = (pageToLoad == null || pageToLoad == 1);
         if (isFirst) {
-            totalPages = (response.data.size() >= 10) ? 2 : 1;
+            totalPages = (response.totalPages > 0) ? response.totalPages : 1;
             tvResultCount.setText("Kết quả (" + response.data.size() + ")");
             updateMapAndList(response.data, true);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         } else {
-            totalPages = response.totalPages;
             updateMapAndList(response.data, false);
         }
         btnLoadMore.setVisibility(currentPage < totalPages ? View.VISIBLE : View.GONE);
@@ -323,13 +330,9 @@ public class MapActivity extends AppCompatActivity implements
     private void loadAllPlaces() {
         showLoading();
         placeRepository.getAllPlaces(new DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> data) {
+            @Override public void onSuccess(List<Place> data) {
                 hideLoading();
-                if (data != null) {
-                    updateMapAndList(data, true);
-                    tvResultCount.setText("Khám phá địa điểm");
-                }
+                if (data != null) updateMapAndList(data, true);
             }
             @Override public void onError(String m) { hideLoading(); }
         });
@@ -337,12 +340,8 @@ public class MapActivity extends AppCompatActivity implements
 
     private void updateMapAndList(List<Place> places, boolean isReset) {
         runOnUiThread(() -> {
-            if (isReset) {
-                placeAdapter.setData(places);
-                mapHelper.showMarkers(places);
-            } else {
-                placeAdapter.addData(places);
-            }
+            if (isReset) { placeAdapter.setData(places); mapHelper.showMarkers(places); }
+            else { placeAdapter.addData(places); }
         });
     }
 
@@ -356,7 +355,10 @@ public class MapActivity extends AppCompatActivity implements
         currentDestination = p;
         layoutSearchResults.setVisibility(View.GONE);
         layoutDirections.setVisibility(View.VISIBLE);
+
+        // KÉO LÊN 50% MÀN HÌNH (Đã có config fitToContents ở trên nên dòng này mới chạy được)
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+
         mapHelper.clearMarkers();
         mapHelper.addDestinationMarker(p);
         fetchRoute(p);
@@ -375,13 +377,12 @@ public class MapActivity extends AppCompatActivity implements
         if (currentUserLocation == null || isFetchingRoute) return;
         isFetchingRoute = true;
         routeRepository.getRoute(currentTransportProfile, currentUserLocation.getLatitude(), currentUserLocation.getLongitude(), d.latitude, d.longitude, new RouteRepository.RouteCallback() {
-            @Override
-            public void onSuccess(List<LatLng> p, List<Step> s, double dis, double dur) {
+            @Override public void onSuccess(List<LatLng> p, List<Step> s, double dis, double dur) {
                 isFetchingRoute = false;
                 mapHelper.drawPolyline(p);
                 navigationManager.startNewRoute(s, p);
                 tvDistance.setText(dis < 1000 ? (int) dis + " m" : String.format("%.1f km", dis / 1000));
-                tvDuration.setText(formatDuration(dur));
+                tvDuration.setText((int)(dur/60) + " phút");
                 stepAdapter.setData(s);
             }
             @Override public void onError(String m) { isFetchingRoute = false; }
@@ -396,10 +397,7 @@ public class MapActivity extends AppCompatActivity implements
         mapHelper.disableMyLocationLayer();
         locationHelper.startLocationUpdates(l -> {
             currentUserLocation = l;
-            if (isNavigating) {
-                mapHelper.updateNavigationCamera(l);
-                navigationManager.onLocationUpdated(l);
-            }
+            if (isNavigating) { mapHelper.updateNavigationCamera(l); navigationManager.onLocationUpdated(l); }
         });
     }
 
@@ -413,27 +411,45 @@ public class MapActivity extends AppCompatActivity implements
         mapHelper.enableMyLocationLayer();
     }
 
-    private void selectTransportMode(String m) {
-        currentTransportProfile = m;
+    private void selectTransportProfile(String profile) {
+        currentTransportProfile = profile;
         if (currentDestination != null) fetchRoute(currentDestination);
     }
 
-    private String formatDuration(double durationSeconds) {
-        long totalMinutes = (long) (durationSeconds / 60);
-        if (totalMinutes < 60) return totalMinutes + " phút";
-        else return (totalMinutes / 60) + " giờ " + (totalMinutes % 60) + " phút";
+    @Override public void onLoginClick() { startActivity(new Intent(this, AuthActivity.class)); }
+    @Override public void onCancelClick() { }
+    @Override public void onUpdateInstruction(String i, String d) { runOnUiThread(() -> { navInstruction.setText(i); navDistance.setText(d); }); }
+    @Override public void onNextStep(String i) {}
+    @Override public void onArrived() { runOnUiThread(() -> { ToastUtils.showSuccess(this, "Đến nơi"); stopNavigation(); }); }
+    @Override public void onRerouteNeeded() { if (!isFetchingRoute) fetchRoute(currentDestination); }
+    @Override public void onRequestPermissionsResult(int r, @NonNull String[] p, @NonNull int[] g) { if (r == LocationHelper.LOCATION_PERMISSION_REQUEST_CODE) checkAndGetLocation(); }
+
+    private void handleIntentData() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+        if ("DIRECT_TO_PLACE".equals(intent.getStringExtra("ACTION_TYPE"))) {
+            double lat = intent.getDoubleExtra("TARGET_LAT", 0);
+            double lng = intent.getDoubleExtra("TARGET_LNG", 0);
+            if (lat != 0) {
+                currentDestination = new Place();
+                currentDestination.latitude = lat; currentDestination.longitude = lng;
+                currentDestination.name = intent.getStringExtra("TARGET_NAME");
+            }
+        }
+        if (intent.hasExtra("SEARCH_QUERY")) {
+            currentKeyword = intent.getStringExtra("SEARCH_QUERY");
+            if (etSearch != null) etSearch.setText(currentKeyword);
+        }
     }
 
-    private void fetchMyFavorites() {
-        if (TokenManager.getInstance(this).getToken() == null) return;
-        favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> places) {
-                List<String> ids = new ArrayList<>();
-                if (places != null) for (Place p : places) ids.add(p.id);
-                placeAdapter.setFavoriteIds(ids);
-            }
-            @Override public void onError(String message) {}
+    private void checkAndGetLocation() {
+        locationHelper.getLastLocation(l -> {
+            currentUserLocation = l;
+            if (l == null) return;
+            if (currentDestination == null) mapHelper.moveCamera(new LatLng(l.getLatitude(), l.getLongitude()), 15f);
+            if (locationHelper.hasPermission()) mapHelper.enableMyLocationLayer();
+            if (!currentKeyword.isEmpty()) resetAndCallSearchApi(null, null);
+            else if (currentDestination != null) enterPreviewDirectionMode(currentDestination);
         });
     }
 
@@ -443,12 +459,23 @@ public class MapActivity extends AppCompatActivity implements
             return;
         }
         favoriteRepository.toggleFavorite(place.id, new DataCallback<FavoriteResponse>() {
-            @Override
-            public void onSuccess(FavoriteResponse data) {
+            @Override public void onSuccess(FavoriteResponse data) {
                 ToastUtils.showSuccess(MapActivity.this, data.message);
                 placeAdapter.toggleFavoriteLocal(place.id);
             }
             @Override public void onError(String message) { ToastUtils.showError(MapActivity.this, message); }
+        });
+    }
+
+    private void fetchMyFavorites() {
+        if (TokenManager.getInstance(this).getToken() == null) return;
+        favoriteRepository.getMyFavorites(new DataCallback<List<Place>>() {
+            @Override public void onSuccess(List<Place> places) {
+                List<String> ids = new ArrayList<>();
+                if (places != null) for (Place p : places) ids.add(p.id);
+                placeAdapter.setFavoriteIds(ids);
+            }
+            @Override public void onError(String message) {}
         });
     }
 
@@ -465,8 +492,15 @@ public class MapActivity extends AppCompatActivity implements
     }
 
     private void addCategoryChip(String k, String l) {
-        Chip c = new Chip(this); c.setText(l); c.setCheckable(true);
-        c.setOnCheckedChangeListener((v, b) -> { currentCategory = b ? k : null; performSearch(); });
+        Chip c = new Chip(this);
+        c.setText(l);
+        c.setCheckable(true);
+        setChipStyle(c, k.equals(currentCategory));
+        c.setOnCheckedChangeListener((v, b) -> {
+            setChipStyle(c, b);
+            if (b) currentCategory = k;
+            else if (k.equals(currentCategory)) currentCategory = null;
+        });
         chipGroupFilter.addView(c);
     }
 
@@ -474,26 +508,42 @@ public class MapActivity extends AppCompatActivity implements
         BottomSheetDialog d = new BottomSheetDialog(this);
         View v = LayoutInflater.from(this).inflate(R.layout.layout_radius_bottom_sheet, null);
         ChipGroup g = v.findViewById(R.id.cgRadiusPresets);
-        v.findViewById(R.id.btnApplyRadius).setOnClickListener(view -> { currentRadius = tempSelectedRadius; u.setText("Bán kính: " + currentRadius + " km"); performSearch(); d.dismiss(); });
+        v.findViewById(R.id.btnApplyRadius).setOnClickListener(view -> {
+            currentRadius = tempSelectedRadius;
+            u.setText("Trong " + currentRadius + " km");
+            d.dismiss();
+        });
+        tempSelectedRadius = currentRadius;
         for (int km : RADIUS_OPTIONS) {
-            Chip c = new Chip(this); c.setText(km + " km"); c.setCheckable(true);
-            if (km == currentRadius) c.setChecked(true);
-            c.setOnCheckedChangeListener((view, isc) -> { if (isc) tempSelectedRadius = km; });
+            Chip c = new Chip(this);
+            c.setText(km + " km");
+            c.setCheckable(true);
+            boolean s = (km == currentRadius);
+            setChipStyle(c, s);
+            if (s) c.setChecked(true);
+            c.setOnCheckedChangeListener((view, isc) -> {
+                if (isc) {
+                    tempSelectedRadius = km;
+                    setChipStyle(c, true);
+                } else setChipStyle(c, false);
+            });
             g.addView(c);
         }
-        d.setContentView(v); d.show();
+        d.setContentView(v);
+        d.show();
     }
-
+    private void setChipStyle(Chip c, boolean s) {
+        if (s) {
+            c.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimaryBackground)));
+            c.setTextColor(ContextCompat.getColor(this, R.color.white));
+            c.setChipStrokeWidth(0f);
+        } else {
+            c.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white)));
+            c.setTextColor(ContextCompat.getColor(this, R.color.colorGeneralText));
+            c.setChipStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.light_gray_stroke)));
+            c.setChipStrokeWidth(1f);
+        }
+    }
     private void showLoading() { if (pbLoading != null) pbLoading.setVisibility(View.VISIBLE); }
     private void hideLoading() { if (pbLoading != null) pbLoading.setVisibility(View.GONE); }
-
-    private boolean isUserLoggedIn() { return TokenManager.getInstance(this).getToken() != null; }
-    @Override public void onLoginClick() { startActivity(new Intent(this, AuthActivity.class)); }
-    @Override public void onCancelClick() {}
-
-    @Override public void onUpdateInstruction(String i, String d) { runOnUiThread(() -> { navInstruction.setText(i); navDistance.setText(d); }); }
-    @Override public void onNextStep(String i) {}
-    @Override public void onArrived() { runOnUiThread(() -> { ToastUtils.showSuccess(this, "Đến nơi"); stopNavigation(); }); }
-    @Override public void onRerouteNeeded() { if (!isFetchingRoute) fetchRoute(currentDestination); }
-    @Override public void onRequestPermissionsResult(int r, @NonNull String[] p, @NonNull int[] g) { if (r == LocationHelper.LOCATION_PERMISSION_REQUEST_CODE) checkAndGetLocation(); }
 }

@@ -12,7 +12,9 @@ import androidx.fragment.app.FragmentManager;
 
 import com.example.berotravel20.R;
 import com.example.berotravel20.ui.main.home.HomeFragment;
+
 import com.example.berotravel20.ui.main.place.PlaceFragment;
+import com.example.berotravel20.ui.map.AddPlaceFragment;
 import com.example.berotravel20.ui.map.MapActivity;
 import com.example.berotravel20.ui.main.profile.AccountFragment;
 import com.example.berotravel20.ui.main.journey.JourneyFragment;
@@ -59,7 +61,13 @@ public class BaseActivity extends AppCompatActivity {
                 replaceFragment(new BookingHistory());
                 return true;
             }
-
+            if ("ADD_PLACE".equals(navigateTo)) {
+                double lat = intent.getDoubleExtra("LAT", 0);
+                double lng = intent.getDoubleExtra("LNG", 0);
+                // Mở AddPlaceFragment
+                replaceFragment(AddPlaceFragment.newInstance(lat, lng));
+                return true;
+            }
             // Logic xem chi tiết địa điểm
             if ("PLACE_DETAIL".equals(navigateTo)) {
                 String placeId = intent.getStringExtra("PLACE_ID");

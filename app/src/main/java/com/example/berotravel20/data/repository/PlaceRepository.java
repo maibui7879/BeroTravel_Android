@@ -48,7 +48,6 @@ public class PlaceRepository extends BaseRepository {
         });
     }
 
-    // ... (Các hàm CRUD khác giữ nguyên)
     public void createPlace(Place.Request request, DataCallback<Place> callback) { makeCall(api.createPlace(request), callback); }
     public void getPlaceById(String id, DataCallback<Place> callback) { makeCall(api.getPlace(id), callback); }
     public void updatePlace(String id, Place.Request request, DataCallback<Place> callback) { makeCall(api.updatePlace(id, request), callback); }

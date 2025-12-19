@@ -31,7 +31,6 @@
             android:background="@drawable/bg_circle_light_teal"
             android:padding="6dp"
             android:src="@drawable/ic_heart"
-            app:tint="#FFB300"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
