@@ -45,26 +45,22 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeFragment extends BaseFragment {
 
-    // --- UI Components ---
     private TextView tvUsername, tvTemperature, tvWeatherDesc, tvHumidity, tvWindSpeed, tvCityName;
     private TextView tvSuggestedTitle;
     private ImageView ivAvatar, ivWeatherIcon;
     private EditText etSearch;
     private View loadingLayout, mainContent;
 
-    // --- Logic & Data ---
     private PlaceRepository placeRepository;
     private LocationHelper locationHelper;
     private double currentLat = 0.0;
     private double currentLng = 0.0;
     private boolean isLocationFound = false;
 
-    // --- Adapters ---
     private MapPlaceAdapter suggestAdapter;
     private MapPlaceAdapter hotelAdapter;
     private MapPlaceAdapter restaurantAdapter;
 
-    // --- Constants ---
     private static final String WEATHER_API_KEY = "144fd485cfd342f1282c4b1e82446243";
     private static final String BASE_URL_WEATHER = "https://api.openweathermap.org/";
 
@@ -86,19 +82,18 @@ public class HomeFragment extends BaseFragment {
         setupCategoryEvents(view);
         loadUserProfile();
 
-        // Chỉ hiện loading nếu chưa có dữ liệu vị trí
         if (!isLocationFound) {
-            setupLocationLogic();
+            setupLocationLogic(true);
         } else {
             hideLoadingLayout();
             loadAllInitialPlaces();
+            setupLocationLogic(false);
         }
     }
 
     private void initViews(View view) {
         loadingLayout = view.findViewById(R.id.loadingLayout);
         mainContent = view.findViewById(R.id.mainContent);
-
         tvUsername = view.findViewById(R.id.tvUsername);
         ivAvatar = view.findViewById(R.id.ivAvatar);
         tvTemperature = view.findViewById(R.id.tvTemperature);
@@ -109,9 +104,7 @@ public class HomeFragment extends BaseFragment {
         ivWeatherIcon = view.findViewById(R.id.ivWeatherIcon);
         etSearch = view.findViewById(R.id.etSearch);
 
-        // --- XỬ LÝ SEARCH INPUT ---
         if (etSearch != null) {
-            // 1. Enter bàn phím
             etSearch.setOnEditorActionListener((v, actionId, event) -> {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     performSearchLogic();
@@ -120,7 +113,6 @@ public class HomeFragment extends BaseFragment {
                 return false;
             });
 
-            // 2. Click icon kính lúp bên phải
             etSearch.setOnTouchListener((v, event) -> {
                 final int DRAWABLE_RIGHT = 2;
                 if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -160,7 +152,7 @@ public class HomeFragment extends BaseFragment {
     private void setupAdapters(View view) {
         MapPlaceAdapter.OnItemClickListener listener = createListener();
 
-        // 1. Suggested (Dùng thẻ Dọc)
+        // 1. Suggested (Sử dụng item_place_vertical)
         View secSuggest = view.findViewById(R.id.secSuggested);
         if (secSuggest != null) {
             RecyclerView rvSuggest = secSuggest.findViewById(R.id.rv_home_list);
@@ -169,13 +161,15 @@ public class HomeFragment extends BaseFragment {
             rvSuggest.setAdapter(suggestAdapter);
         }
 
-        // 2. Hotels (Dọc - Item ngang mặc định)
+        // 2. Hotels (Sử dụng item ngang mặc định - item_place_result)
+        hotelAdapter = new MapPlaceAdapter(getContext(), listener);
         setupSection(view.findViewById(R.id.secHotels), "Khách sạn gần bạn",
-                LinearLayoutManager.VERTICAL, hotelAdapter = new MapPlaceAdapter(getContext(), listener));
+                LinearLayoutManager.VERTICAL, hotelAdapter);
 
-        // 3. Restaurants (Ngang - Item ngang mặc định)
+        // 3. Restaurants (SỬA LẠI: Sử dụng item_place_vertical giống Suggested)
+        restaurantAdapter = new MapPlaceAdapter(getContext(), R.layout.item_place_vertical, listener);
         setupSection(view.findViewById(R.id.secRestaurants), "Nhà hàng ngon gần bạn",
-                LinearLayoutManager.HORIZONTAL, restaurantAdapter = new MapPlaceAdapter(getContext(), listener));
+                LinearLayoutManager.HORIZONTAL, restaurantAdapter);
     }
 
     private void setupSection(View secView, String title, int orientation, MapPlaceAdapter adapter) {
@@ -202,7 +196,7 @@ public class HomeFragment extends BaseFragment {
             if (id == R.id.btnCatPark) { category = "park"; title = "Công viên quanh đây"; }
             else if (id == R.id.btnCatRestaurant) { category = "restaurant"; title = "Nhà hàng quanh đây"; }
             else if (id == R.id.btnCatAttraction) { category = "tourist_attraction"; title = "Điểm tham quan quanh đây"; }
-            else if (id == R.id.btnCatHotel) { category = "lodging"; title = "Nơi lưu trú quanh đây"; }
+            else if (id == R.id.btnCatHotel) { category = "hotel"; title = "Khách sạn quanh đây"; }
             else if (id == R.id.btnCatBar) { category = "bar"; title = "Quán bar & Pub"; }
 
             if (tvSuggestedTitle != null) tvSuggestedTitle.setText(title);
@@ -216,9 +210,11 @@ public class HomeFragment extends BaseFragment {
         view.findViewById(R.id.btnCatBar).setOnClickListener(catListener);
     }
 
-    private void setupLocationLogic() {
-        loadingLayout.setVisibility(View.VISIBLE);
-        mainContent.setVisibility(View.INVISIBLE);
+    private void setupLocationLogic(boolean showLoadingUI) {
+        if (showLoadingUI) {
+            loadingLayout.setVisibility(View.VISIBLE);
+            mainContent.setVisibility(View.INVISIBLE);
+        }
 
         if (locationHelper.hasPermission()) {
             locationHelper.getLastLocation(location -> {
@@ -235,20 +231,18 @@ public class HomeFragment extends BaseFragment {
             });
         } else {
             locationHelper.requestPermission();
-            hideLoadingLayout();
+            if (showLoadingUI) hideLoadingLayout();
             loadAllInitialPlaces();
         }
     }
 
     private void handleLocationFound(android.location.Location location) {
-        if (isLocationFound) return;
         currentLat = location.getLatitude();
         currentLng = location.getLongitude();
         isLocationFound = true;
-
         hideLoadingLayout();
         fetchWeather(currentLat, currentLng);
-        loadAllInitialPlaces(); // Ban đầu load tất cả
+        loadAllInitialPlaces();
         loadNearbySections(currentLat, currentLng);
     }
 
@@ -298,14 +292,12 @@ public class HomeFragment extends BaseFragment {
                 if (suggestAdapter != null) suggestAdapter.toggleFavoriteLocal(p.id);
                 if (hotelAdapter != null) hotelAdapter.toggleFavoriteLocal(p.id);
                 if (restaurantAdapter != null) restaurantAdapter.toggleFavoriteLocal(p.id);
-                Toast.makeText(getContext(), "Đã cập nhật yêu thích", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onItemClick(Place p) {
-                // CHUYỂN MÀN HÌNH TẠI ĐÂY (VÌ HOME CÓ ID base_container)
                 getParentFragmentManager().beginTransaction()
-                        .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                        .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right)
                         .replace(R.id.base_container, PlaceFragment.newInstance(p.id))
                         .addToBackStack(null)
                         .commit();
@@ -354,7 +346,7 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (isAdded() && response.isSuccessful() && response.body() != null) {
-                    tvUsername.setText("Hi, " + response.body().name);
+                    tvUsername.setText("Xin chào, " + response.body().name);
                     Glide.with(HomeFragment.this).load(response.body().avatarUrl).placeholder(R.drawable.account_icon).into(ivAvatar);
                 }
             }
