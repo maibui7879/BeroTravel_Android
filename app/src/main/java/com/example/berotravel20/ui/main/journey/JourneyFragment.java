@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -35,7 +36,7 @@ public class JourneyFragment extends BaseFragment implements RequestLoginDialog.
     private FloatingActionButton fabCreate;
     private SwipeRefreshLayout swipeRefreshLayout;
     private LinearLayout llEmptyJourney;
-
+    private ImageView btnBack;
     private JourneyAdapter adapter;
     private List<Journey> journeyList = new ArrayList<>();
 
@@ -80,6 +81,7 @@ public class JourneyFragment extends BaseFragment implements RequestLoginDialog.
         fabCreate = view.findViewById(R.id.fab_create_journey);
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_journey);
         llEmptyJourney = view.findViewById(R.id.ll_empty_journey);
+        btnBack = view.findViewById(R.id.btn_back_journey);
     }
 
     private void setupRecyclerView() {
@@ -101,7 +103,14 @@ public class JourneyFragment extends BaseFragment implements RequestLoginDialog.
 
     private void setupEvents() {
         fabCreate.setOnClickListener(v -> showSearchToCreate());
-
+        btnBack.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                // Nếu dùng Fragment, gọi popBackStack
+                getParentFragmentManager().popBackStack();
+                // Hoặc nếu muốn về hẳn màn hình trước đó của Activity
+                // getActivity().onBackPressed();
+            }
+        });
         // Xử lý kéo để làm mới
         swipeRefreshLayout.setOnRefreshListener(() -> loadData(false));
         swipeRefreshLayout.setColorSchemeResources(R.color.teal_700);

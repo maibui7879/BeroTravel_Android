@@ -45,7 +45,7 @@
         android:id="@+id/tv_user_email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="abisolasherif23@gmail.com"
+        android:text="user@gmail.com"
         android:textColor="#9E9E9E"
         android:textSize="15sp" />
 
@@ -63,22 +63,12 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <TextView
-        android:id="@+id/btn_save_invoice"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:padding="8dp"
-        android:text="Tải xuống hóa đơn (JPG)"
-        android:textColor="@color/teal_700"
-        android:textStyle="bold" />
-
     <Button
         android:id="@+id/btn_back_to_home"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:backgroundTint="@color/teal_700"
-        android:text="Review reservation"
+        android:text="Back to Home"
         android:textAllCaps="false"
         android:textSize="18sp"
         app:cornerRadius="28dp" />

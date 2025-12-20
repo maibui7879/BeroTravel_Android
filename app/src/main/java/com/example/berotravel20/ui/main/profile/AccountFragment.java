@@ -1,6 +1,8 @@
 package com.example.berotravel20.ui.main.profile;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,11 +11,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog; // [MỚI]
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -44,10 +45,14 @@ import com.example.berotravel20.viewmodel.ProfileViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class AccountFragment extends BaseFragment implements RequestLoginDialog.RequestLoginListener {
 
     private ProfileViewModel viewModel;
-    private User mCurrentUser; // [MỚI] Biến lưu user hiện tại để lấy URL ảnh khi click
+    private User mCurrentUser;
 
     private FavoriteRepository favoriteRepository;
     private UserStatsRepository userStatsRepository;
@@ -118,17 +123,21 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         btnLogout = view.findViewById(R.id.btnLogout);
 
         TextView btnChangePassword = view.findViewById(R.id.btnChangePassword);
-        btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+        if (btnChangePassword != null) {
+            btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+        }
     }
 
+    // --- LOGIC ĐỔI MẬT KHẨU ---
+
     private void showChangePasswordDialog() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
         builder.setView(dialogView);
 
-        android.app.AlertDialog dialog = builder.create();
+        AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
         EditText etOld = dialogView.findViewById(R.id.etOldPassword);
@@ -141,62 +150,74 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
             String newP = etNew.getText().toString().trim();
             String confirmP = etConfirm.getText().toString().trim();
 
-            // 1. Kiểm tra trống các ô
             if (oldP.isEmpty() || newP.isEmpty() || confirmP.isEmpty()) {
-                Toast.makeText(getContext(), "Vui lòng nhập đầy đủ 3 ô mật khẩu", Toast.LENGTH_SHORT).show();
+                showCustomNotifyDialog("Thiếu thông tin", "Vui lòng nhập đầy đủ 3 ô mật khẩu", false);
                 return;
             }
-
-            // 2. Kiểm tra mật khẩu mới khác mật khẩu cũ
             if (oldP.equals(newP)) {
-                Toast.makeText(getContext(), "Mật khẩu mới phải khác mật khẩu hiện tại", Toast.LENGTH_SHORT).show();
+                showCustomNotifyDialog("Trùng mật khẩu", "Mật khẩu mới phải khác mật khẩu hiện tại", false);
                 return;
             }
-
-            // 3. Kiểm tra 2 ô mật khẩu mới phải giống nhau
             if (!newP.equals(confirmP)) {
-                Toast.makeText(getContext(), "Mật khẩu xác nhận không trùng khớp", Toast.LENGTH_SHORT).show();
+                showCustomNotifyDialog("Lỗi xác nhận", "Mật khẩu xác nhận không trùng khớp", false);
                 return;
             }
-
-            // 4. Kiểm tra độ dài tối thiểu
             if (newP.length() < 6) {
-                Toast.makeText(getContext(), "Mật khẩu mới phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show();
+                showCustomNotifyDialog("Mật khẩu yếu", "Mật khẩu mới phải có ít nhất 6 ký tự", false);
                 return;
             }
 
-            // TIẾN HÀNH GỌI API (Dùng object User để gửi password mới lên Backend JS)
-            com.example.berotravel20.data.model.User.User userUpdate = new com.example.berotravel20.data.model.User.User();
+            User userUpdate = new User();
             userUpdate.setPassword(newP);
 
             UserApiService apiService = RetrofitClient.getInstance(getContext()).getRetrofit().create(UserApiService.class);
-            apiService.changePassword(userUpdate).enqueue(new retrofit2.Callback<com.example.berotravel20.data.model.User.User>() {
+            apiService.changePassword(userUpdate).enqueue(new Callback<User>() {
                 @Override
-                public void onResponse(retrofit2.Call<com.example.berotravel20.data.model.User.User> call, retrofit2.Response<com.example.berotravel20.data.model.User.User> response) {
+                public void onResponse(Call<User> call, Response<User> response) {
                     if (response.isSuccessful()) {
-                        Toast.makeText(getContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
+                        showCustomNotifyDialog("Thành công", "Mật khẩu của bạn đã được thay đổi!", true);
                     } else {
-                        Toast.makeText(getContext(), "Mật khẩu cũ không chính xác hoặc lỗi hệ thống", Toast.LENGTH_SHORT).show();
+                        showCustomNotifyDialog("Thất bại", "Mật khẩu cũ không chính xác hoặc lỗi hệ thống", false);
                     }
                 }
-
                 @Override
-                public void onFailure(retrofit2.Call<com.example.berotravel20.data.model.User.User> call, Throwable t) {
-                    Toast.makeText(getContext(), "Lỗi kết nối Server", Toast.LENGTH_SHORT).show();
+                public void onFailure(Call<User> call, Throwable t) {
+                    showCustomNotifyDialog("Lỗi kết nối", "Không thể liên lạc với máy chủ", false);
                 }
             });
         });
-
         dialog.show();
     }
 
+    private void showCustomNotifyDialog(String title, String message, boolean isSuccess) {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_dialog_success, null);
+        AlertDialog notifyDialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
+
+        TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
+        TextView tvMsg = dialogView.findViewById(R.id.tv_dialog_message);
+        ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_icon);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_dialog_confirm);
+
+        tvTitle.setText(title);
+        tvMsg.setText(message);
+
+        if (!isSuccess) {
+            ivIcon.setImageResource(android.R.drawable.ic_dialog_alert);
+            ivIcon.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E53935")));
+            btnConfirm.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E53935")));
+        }
+
+        btnConfirm.setOnClickListener(v -> notifyDialog.dismiss());
+        if (notifyDialog.getWindow() != null) notifyDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        notifyDialog.show();
+    }
+
+    // --- LOGIC HIỂN THỊ DỮ LIỆU ---
     private void setupRecyclerView() {
         placeAdapter = new MapPlaceAdapter(getContext(), new MapPlaceAdapter.OnItemClickListener() {
             @Override
-            public void onFavoriteClick(Place place) {
-                handleFavoriteToggle(place);
-            }
+            public void onFavoriteClick(Place place) { handleFavoriteToggle(place); }
 
             @Override
             public void onItemClick(Place place) {
@@ -215,7 +236,6 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
                 startActivity(intent);
             }
         });
-
         rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
         rvFavorites.setAdapter(placeAdapter);
     }
@@ -272,9 +292,7 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
                 showSuccess("Đã xóa khỏi danh sách yêu thích");
             }
             @Override
-            public void onError(String message) {
-                showError(message);
-            }
+            public void onError(String message) { showError(message); }
         });
     }
 
@@ -282,8 +300,7 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
-                mCurrentUser = user; // [MỚI] Lưu user vào biến toàn cục
-
+                mCurrentUser = user;
                 tvUserName.setText(user.name);
                 if (user.email != null) tvUserEmail.setText(user.email);
                 tvUserBio.setText((user.bio != null && !user.bio.isEmpty()) ? user.bio : "Thành viên BeroTravel.");
@@ -300,25 +317,15 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         btnLogout.setOnClickListener(v -> handleLogout());
         btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
 
-        // [MỚI] Thêm sự kiện click vào Avatar để xem full
         ivAvatar.setOnClickListener(v -> {
-            if (mCurrentUser != null && mCurrentUser.avatarUrl != null && !mCurrentUser.avatarUrl.isEmpty()) {
-                showFullImage(mCurrentUser.avatarUrl);
-            }
+            if (mCurrentUser != null && mCurrentUser.avatarUrl != null) showFullImage(mCurrentUser.avatarUrl);
         });
-
-        // [MỚI] Thêm sự kiện click vào Ảnh bìa (Cover) để xem full (nếu muốn)
         ivCover.setOnClickListener(v -> {
-            if (mCurrentUser != null && mCurrentUser.coverUrl != null && !mCurrentUser.coverUrl.isEmpty()) {
-                showFullImage(mCurrentUser.coverUrl);
-            }
+            if (mCurrentUser != null && mCurrentUser.coverUrl != null) showFullImage(mCurrentUser.coverUrl);
         });
     }
 
-    // [MỚI] Hàm hiển thị ảnh Fullscreen (Tái sử dụng layout dialog_view_photo.xml)
     private void showFullImage(String url) {
-        if (getContext() == null) return;
-
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         View view = getLayoutInflater().inflate(R.layout.dialog_view_photo, null);
         builder.setView(view);
@@ -326,15 +333,11 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         ImageView ivFull = view.findViewById(R.id.iv_full_photo);
         View btnClose = view.findViewById(R.id.btn_close_photo);
 
-        Glide.with(this)
-                .load(url)
-                .fitCenter()
-                .placeholder(R.drawable.placeholder_image)
-                .into(ivFull);
+        Glide.with(this).load(url).fitCenter().placeholder(R.drawable.placeholder_image).into(ivFull);
 
         AlertDialog dialog = builder.create();
         btnClose.setOnClickListener(v -> dialog.dismiss());
-        ivFull.setOnClickListener(v -> dialog.dismiss()); // Bấm vào ảnh cũng đóng
+        ivFull.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
 
@@ -350,9 +353,7 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         User currentUser = viewModel.getUser().getValue();
         if (currentUser == null) return;
         EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, dob, avatarUrl, coverUrl) -> {
-            String finalAvatar = (avatarUrl != null) ? avatarUrl : currentUser.avatarUrl;
-            String finalCover = (coverUrl != null) ? coverUrl : currentUser.coverUrl;
-            viewModel.updateProfile(name, bio, dob, finalAvatar, finalCover);
+            viewModel.updateProfile(name, bio, dob, avatarUrl != null ? avatarUrl : currentUser.avatarUrl, coverUrl != null ? coverUrl : currentUser.coverUrl);
         });
         bottomSheet.show(getParentFragmentManager(), "EditProfileBottomSheet");
     }
@@ -363,11 +364,6 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         dialog.show(getChildFragmentManager(), "RequestLoginDialog");
     }
 
-    @Override public void onLoginClick() {
-        startActivity(new Intent(requireContext(), AuthActivity.class));
-    }
-
-    @Override public void onCancelClick() {
-
-    }
+    @Override public void onLoginClick() { startActivity(new Intent(requireContext(), AuthActivity.class)); }
+    @Override public void onCancelClick() {}
 }
