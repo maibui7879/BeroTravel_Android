@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -26,19 +27,20 @@ import java.util.Calendar;
 
 public class EditProfileBottomSheet extends BottomSheetDialogFragment {
 
-    // [SỬA 1] Thêm khai báo etDob vào đây
     private EditText etName, etBio, etDob;
     private ImageView ivAvatar, ivCover;
     private Button btnSave;
+    private ProgressBar progressBar; // Thêm progress bar để báo hiệu đang upload
 
     private User currentUser;
     private OnProfileSaveListener listener;
 
-    private String avatarBase64 = null;
-    private String coverBase64 = null;
+    // Các biến này giờ sẽ chứa LINK URL từ Cloudinary thay vì chuỗi Base64
+    private String avatarUrl = null;
+    private String coverUrl = null;
 
     public interface OnProfileSaveListener {
-        void onSave(String name, String bio, String dob, String avatarBase64, String coverBase64);
+        void onSave(String name, String bio, String dob, String avatarUrl, String coverUrl);
     }
 
     public EditProfileBottomSheet(User user, OnProfileSaveListener listener) {
@@ -46,22 +48,76 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
         this.listener = listener;
     }
 
+    // Xử lý chọn Avatar
     private final ActivityResultLauncher<String> pickAvatar = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
                     ivAvatar.setImageURI(uri);
-                    avatarBase64 = ImageUtils.uriToBase64(requireContext(), uri);
+                    if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+                    btnSave.setEnabled(false); // Vô hiệu hóa nút Lưu khi đang upload
+
+                    ImageUtils.uriToBase64(requireContext(), uri, new ImageUtils.CloudinaryCallback() {
+                        @Override
+                        public void onSuccess(String url) {
+                            avatarUrl = url;
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                    btnSave.setEnabled(true);
+                                    Toast.makeText(getContext(), "Tải ảnh đại diện thành công", Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                    btnSave.setEnabled(true);
+                                    Toast.makeText(getContext(), "Lỗi tải ảnh: " + error, Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    });
                 }
             }
     );
 
+    // Xử lý chọn Cover (Ảnh bìa)
     private final ActivityResultLauncher<String> pickCover = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
                     ivCover.setImageURI(uri);
-                    coverBase64 = ImageUtils.uriToBase64(requireContext(), uri);
+                    if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+                    btnSave.setEnabled(false);
+
+                    ImageUtils.uriToBase64(requireContext(), uri, new ImageUtils.CloudinaryCallback() {
+                        @Override
+                        public void onSuccess(String url) {
+                            coverUrl = url;
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                    btnSave.setEnabled(true);
+                                    Toast.makeText(getContext(), "Tải ảnh bìa thành công", Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                    btnSave.setEnabled(true);
+                                    Toast.makeText(getContext(), "Lỗi tải ảnh bìa: " + error, Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    });
                 }
             }
     );
@@ -69,13 +125,15 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Đảm bảo tên layout đúng với tên file XML bạn tạo (trong ví dụ XML bạn gửi ko có tên file, mình giả định là layout_edit_profile)
         return inflater.inflate(R.layout.layout_edit_profile, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Khởi tạo Cloudinary nếu chưa làm ở MainActivity
+        ImageUtils.initCloudinary();
 
         etDob = view.findViewById(R.id.etEditDob);
         etName = view.findViewById(R.id.etEditName);
@@ -88,38 +146,33 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
         if (currentUser != null) {
             etName.setText(currentUser.name);
             etBio.setText(currentUser.bio);
+            if (currentUser.dob != null) etDob.setText(currentUser.dob);
 
-            // [SỬA 2] Fill ngày sinh cũ nếu có
-            if (currentUser.dob != null) {
-                etDob.setText(currentUser.dob);
-            }
+            // Giữ lại URL cũ nếu người dùng không thay đổi ảnh mới
+            avatarUrl = currentUser.avatarUrl;
+            coverUrl = currentUser.coverUrl;
 
             if (currentUser.avatarUrl != null) Glide.with(this).load(currentUser.avatarUrl).into(ivAvatar);
             if (currentUser.coverUrl != null) Glide.with(this).load(currentUser.coverUrl).into(ivCover);
         }
 
-        // Sự kiện chọn ảnh
         ivAvatar.setOnClickListener(v -> pickAvatar.launch("image/*"));
         ivCover.setOnClickListener(v -> pickCover.launch("image/*"));
-
-        // [SỬA 3] Sự kiện chọn Ngày sinh (DatePicker)
-        // Vì XML có focusable="false" nên bắt buộc phải dùng onClick để hiện Dialog chọn ngày
         etDob.setOnClickListener(v -> showDatePickerDialog());
 
-        // Sự kiện Lưu
         btnSave.setOnClickListener(v -> {
             String newName = etName.getText().toString().trim();
             String newBio = etBio.getText().toString().trim();
             String newDob = etDob.getText().toString().trim();
 
             if (listener != null) {
-                listener.onSave(newName, newBio, newDob, avatarBase64, coverBase64);
+                // Trả về link URL thay vì Base64
+                listener.onSave(newName, newBio, newDob, avatarUrl, coverUrl);
             }
             dismiss();
         });
     }
 
-    // [SỬA 4] Hàm hiển thị lịch
     private void showDatePickerDialog() {
         final Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
@@ -128,7 +181,6 @@ public class EditProfileBottomSheet extends BottomSheetDialogFragment {
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // Format lại ngày tháng thành DD/MM/YYYY
                     String date = selectedDay + "/" + (selectedMonth + 1) + "/" + selectedYear;
                     etDob.setText(date);
                 }, year, month, day);

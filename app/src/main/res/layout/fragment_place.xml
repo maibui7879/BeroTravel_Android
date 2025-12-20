@@ -72,7 +72,7 @@
                         android:background="@drawable/bg_circle_light_teal"
                         android:padding="10dp"
                         android:src="@drawable/ic_heart"
-                        app:tint="@color/white" />
+                        app:tint="#FFC107" />
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
 
@@ -228,12 +228,12 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_photos"
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"
+                    android:layout_height="120dp"
                     android:visibility="gone" />
                 <LinearLayout
                     android:id="@+id/layout_no_photos"
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"
+                    android:layout_height="120dp"
                     android:background="#F5F5F5"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -241,7 +241,7 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:src="@drawable/ic_empty_booking"
-                        app:tint="#BDBDBD" />
+                        />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

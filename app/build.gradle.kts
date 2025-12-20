@@ -89,7 +89,6 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.work:work-runtime:2.8.1") // để đẩy thông báo về điện thoại
 
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

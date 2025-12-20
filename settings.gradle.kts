@@ -18,9 +18,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jcenter.bintray.com") }
+        maven { url = uri("https://www.jitpack.io") }
     }
 }
 
 rootProject.name = "BeroTravel2.0"
 include(":app")
- 

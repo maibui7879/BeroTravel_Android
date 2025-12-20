@@ -69,6 +69,9 @@ public class PhotoTabFragment extends BaseFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         placeRepository = new PlaceRepository();
+        // Khởi tạo Cloudinary Java SDK (Không dùng LiTr)
+        ImageUtils.initCloudinary();
+
         if (getArguments() != null) {
             placeId = getArguments().getString("id");
             mainImage = getArguments().getString("mainImg");
@@ -100,7 +103,6 @@ public class PhotoTabFragment extends BaseFragment {
         rv.setAdapter(photoAdapter);
     }
 
-    // --- HÀM RELOAD DỮ LIỆU TỪ SERVER ---
     private void refreshImageData() {
         showLoading();
         placeRepository.getPlaceById(placeId, new DataCallback<Place>() {
@@ -109,7 +111,7 @@ public class PhotoTabFragment extends BaseFragment {
                 hideLoading();
                 if (data != null && data.imgSet != null) {
                     imgSet = new ArrayList<>(data.imgSet);
-                    photoAdapter.setData(imgSet); // Cập nhật lại giao diện lưới ảnh
+                    photoAdapter.setData(imgSet);
                 }
             }
 
@@ -169,16 +171,34 @@ public class PhotoTabFragment extends BaseFragment {
         dialog.show();
     }
 
+    /**
+     * SỬA LỖI TẠI ĐÂY: Sử dụng CloudinaryCallback mới
+     */
     private void processBase64Upload(Uri uri) {
         showLoading();
-        // Ép kích thước ảnh xuống 800px để tránh lỗi 500 do dung lượng quá lớn
-        String base64Image = ImageUtils.uriToBase64(requireContext(), uri);
-        if (base64Image == null) {
-            hideLoading();
-            showError("Lỗi xử lý hình ảnh!");
-            return;
-        }
-        updateServerImages(base64Image);
+
+        // Gọi hàm uriToBase64 (hiện tại logic là upload Cloudinary)
+        ImageUtils.uriToBase64(requireContext(), uri, new ImageUtils.CloudinaryCallback() {
+            @Override
+            public void onSuccess(String url) {
+                // ImageUtils chạy trên luồng phụ, cần quay lại luồng chính để update UI
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        updateServerImages(url);
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        hideLoading();
+                        showError("Lỗi upload Cloudinary: " + error);
+                    });
+                }
+            }
+        });
     }
 
     private void processUrlUpload(String url) {
@@ -195,16 +215,14 @@ public class PhotoTabFragment extends BaseFragment {
             @Override
             public void onSuccess(Void data) {
                 showSuccess("Thêm ảnh thành công!");
-                // TỰ ĐỘNG RELOAD ĐỂ ĐỒNG BỘ VỚI SERVER
                 refreshImageData();
             }
 
             @Override
             public void onError(String message) {
-                // Xử lý đặc biệt cho lỗi 500 nhưng thực tế đã lưu thành công
                 if (message.contains("500")) {
                     showWarning("Đang đồng bộ lại dữ liệu...");
-                    refreshImageData(); // Vẫn reload vì Server thường đã lưu xong
+                    refreshImageData();
                 } else {
                     hideLoading();
                     showError("Lỗi: " + message);

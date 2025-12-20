@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -46,22 +47,53 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
     private String mEditPlaceId = null;
     private boolean isEditMode = false;
     private PlaceRepository repository;
-    private String base64MainImage = null;
+
+    // Biến này bây giờ sẽ chứa URL từ Cloudinary thay vì chuỗi Base64
+    private String uploadedImageUrl = null;
 
     private EditText etName, etAddress, etDesc, etLat, etLng, etImageUrl;
     private AutoCompleteTextView spinnerCategory;
     private ImageView ivMainPreview;
     private TextView tvPlaceholder, tvFormTitle;
+    private Button btnSave;
     private GoogleMap mMap;
     private Marker currentMarker;
 
+    // [SỬA LỖI] Cập nhật ActivityResultLauncher để sử dụng Callback của Cloudinary
     private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     ivMainPreview.setImageURI(uri);
                     tvPlaceholder.setVisibility(View.GONE);
-                    etImageUrl.setText(""); // Xóa URL nếu chọn ảnh từ máy
-                    base64MainImage = ImageUtils.uriToBase64(requireContext(), uri);
+                    etImageUrl.setText("");
+
+                    showLoading();
+                    btnSave.setEnabled(false); // Vô hiệu hóa nút lưu khi đang upload
+
+                    ImageUtils.uriToBase64(requireContext(), uri, new ImageUtils.CloudinaryCallback() {
+                        @Override
+                        public void onSuccess(String url) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    hideLoading();
+                                    btnSave.setEnabled(true);
+                                    uploadedImageUrl = url; // Lưu URL ảnh đã upload
+                                    Toast.makeText(getContext(), "Tải ảnh lên thành công!", Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    hideLoading();
+                                    btnSave.setEnabled(true);
+                                    showCustomDialog("Lỗi", "Không thể tải ảnh: " + error, false, null);
+                                });
+                            }
+                        }
+                    });
                 }
             });
 
@@ -85,6 +117,9 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Khởi tạo Cloudinary
+        ImageUtils.initCloudinary();
+
         if (getArguments() != null) {
             lat = getArguments().getDouble("LAT");
             lng = getArguments().getDouble("LNG");
@@ -116,7 +151,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         }
 
         view.findViewById(R.id.btn_select_main_image).setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
-        view.findViewById(R.id.btn_save_place).setOnClickListener(v -> savePlace());
+        btnSave.setOnClickListener(v -> savePlace());
 
         View.OnClickListener closeAction = v -> handleExit();
         view.findViewById(R.id.btn_cancel).setOnClickListener(closeAction);
@@ -134,12 +169,13 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         ivMainPreview = view.findViewById(R.id.iv_main_preview);
         tvPlaceholder = view.findViewById(R.id.tv_main_placeholder);
         tvFormTitle = view.findViewById(R.id.tv_form_title);
+        btnSave = view.findViewById(R.id.btn_save_place);
+
         etLat.setText(String.valueOf(lat));
         etLng.setText(String.valueOf(lng));
     }
 
     private void setupCategorySpinner() {
-        // Lấy toàn bộ danh sách tên Tiếng Việt từ CategoryUtils
         List<String> displayNames = new ArrayList<>(CategoryUtils.CATEGORY_MAP.values());
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_dropdown_item_1line, displayNames);
@@ -154,7 +190,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             public void afterTextChanged(Editable s) {
                 String url = s.toString().trim();
                 if (!url.isEmpty()) {
-                    base64MainImage = null;
+                    uploadedImageUrl = null;
                     tvPlaceholder.setVisibility(View.GONE);
                     Glide.with(AddPlaceFragment.this).load(url).into(ivMainPreview);
                 }
@@ -172,8 +208,8 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
                 etAddress.setText(place.address);
                 etDesc.setText(place.description);
                 etImageUrl.setText(place.imageUrl);
+                uploadedImageUrl = place.imageUrl; // Giữ lại URL cũ
 
-                // Hiển thị tên Tiếng Việt dựa trên key từ Server
                 spinnerCategory.setText(CategoryUtils.getLabel(place.category), false);
 
                 if (place.imageUrl != null) {
@@ -196,8 +232,7 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
             return;
         }
 
-        // Tìm lại key server dựa trên giá trị hiển thị tiếng Việt
-        String serverKey = "other"; // mặc định
+        String serverKey = "other";
         for (Map.Entry<String, String> entry : CategoryUtils.CATEGORY_MAP.entrySet()) {
             if (entry.getValue().equals(vnNameSelected)) {
                 serverKey = entry.getKey();
@@ -210,7 +245,8 @@ public class AddPlaceFragment extends BaseFragment implements OnMapReadyCallback
         req.description = etDesc.getText().toString().trim();
         req.category = serverKey;
 
-        if (base64MainImage != null) req.imageUrl = base64MainImage;
+        // Ưu tiên ảnh vừa upload lên Cloudinary, sau đó đến URL nhập tay
+        if (uploadedImageUrl != null) req.imageUrl = uploadedImageUrl;
         else if (!inputUrl.isEmpty()) req.imageUrl = inputUrl;
 
         req.imgSet = new ArrayList<>();

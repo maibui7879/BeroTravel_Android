@@ -400,23 +400,56 @@ public class MapActivity extends AppCompatActivity implements
     }
 
     private void startNavigation() {
+        // 1. Kiểm tra vị trí
+        if (currentUserLocation == null) {
+            ToastUtils.show(this, "Đang lấy vị trí...", 1);
+            return;
+        }
+
         isNavigating = true;
+
+        // 2. Ẩn các giao diện cũ (QUAN TRỌNG: Phải ẩn layoutDirections)
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         groupMainUI.setVisibility(View.GONE);
+        layoutDirections.setVisibility(View.GONE); // <--- THÊM DÒNG NÀY ĐỂ ẨN UI XEM TRƯỚC
+        bottomSheetBehavior.setHideable(true);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        // 3. Hiện giao diện dẫn đường
         layoutNavigationActive.setVisibility(View.VISIBLE);
-        mapHelper.disableMyLocationLayer();
+
+        // 4. Setup Map
+        mapHelper.disableMyLocationLayer(); // Tắt chấm xanh
+
+        // --- FIX LỖI QUAN TRỌNG NHẤT Ở ĐÂY ---
+        // Cập nhật góc nhìn 3D NGAY LẬP TỨC, không chờ GPS
+        mapHelper.updateNavigationCamera(currentUserLocation);
+
+        // 5. Bắt đầu lắng nghe vị trí để cập nhật liên tục
         locationHelper.startLocationUpdates(l -> {
             currentUserLocation = l;
-            if (isNavigating) { mapHelper.updateNavigationCamera(l); navigationManager.onLocationUpdated(l); }
+            if (isNavigating) {
+                // Camera đi theo người dùng
+                mapHelper.updateNavigationCamera(l);
+                // Tính toán logic dẫn đường (thông qua Manager)
+                navigationManager.onLocationUpdated(l);
+            }
         });
     }
-
     private void stopNavigation() {
         isNavigating = false;
         locationHelper.stopLocationUpdates();
+
+        // Ẩn UI dẫn đường
         layoutNavigationActive.setVisibility(View.GONE);
+
+        // Hiện lại UI chính
         groupMainUI.setVisibility(View.VISIBLE);
+
+        // Hiện lại UI xem trước (để user quyết định đi tiếp hay thoát)
+        layoutDirections.setVisibility(View.VISIBLE);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+
+        // Reset Map về 2D
         mapHelper.stopNavigationMode();
         mapHelper.enableMyLocationLayer();
     }
