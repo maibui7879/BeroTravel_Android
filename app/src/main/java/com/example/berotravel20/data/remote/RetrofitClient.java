@@ -18,7 +18,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static final String TAG = "RETROFIT_CLIENT";
-    private static final String BASE_URL = "http://10.0.2.2:5000/"; // IP máy ảo Android
+    private static final String BASE_URL = "https://a69fb078156f.ngrok-free.app/"; // IP máy ảo Android: http://10.0.2.2:5000/
 
     private static RetrofitClient instance = null;
     private final Retrofit retrofit;
