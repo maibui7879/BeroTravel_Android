@@ -237,12 +237,35 @@ public class PhotoTabFragment extends BaseFragment {
     private void showFullPhoto(int position) {
         if (imgSet == null || position >= imgSet.size()) return;
         String url = imgSet.get(position);
+
+        // 1. Tạo Builder với Theme Fullscreen
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        ImageView iv = new ImageView(requireContext());
-        Glide.with(this).load(url).into(iv);
-        builder.setView(iv);
+
+        // 2. Lấy Layout từ XML vừa tạo
+        View view = getLayoutInflater().inflate(R.layout.dialog_view_photo, null);
+        builder.setView(view);
+
+        // 3. Ánh xạ View
+        ImageView ivFull = view.findViewById(R.id.iv_full_photo);
+        View btnClose = view.findViewById(R.id.btn_close_photo);
+
+        // 4. Load ảnh bằng Glide (QUAN TRỌNG: fitCenter)
+        Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.placeholder_image) // Nên có ảnh chờ để không thấy đen xì khi mạng chậm
+                .error(android.R.drawable.ic_delete) // Icon lỗi nếu link hỏng
+                .fitCenter()
+                .into(ivFull);
+
+        // 5. Tạo và hiện Dialog
         AlertDialog dialog = builder.create();
-        iv.setOnClickListener(v -> dialog.dismiss());
+
+        // Sự kiện đóng
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        // Bấm vào ảnh cũng đóng (tuỳ chọn)
+        ivFull.setOnClickListener(v -> dialog.dismiss());
+
         dialog.show();
     }
 }

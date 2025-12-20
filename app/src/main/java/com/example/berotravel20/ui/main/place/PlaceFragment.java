@@ -20,9 +20,11 @@ import com.example.berotravel20.R;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.model.Favorite.FavoriteResponse;
 import com.example.berotravel20.data.model.Place.Place;
+import com.example.berotravel20.data.model.PlaceStatus.PlaceStatus; // [MỚI] Import Model
 import com.example.berotravel20.data.model.Review.Review;
 import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.PlaceRepository;
+import com.example.berotravel20.data.repository.PlaceStatusRepository; // [MỚI] Import Repo
 import com.example.berotravel20.data.repository.ReviewRepository;
 import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.main.booking.BookingFragment;
@@ -37,10 +39,13 @@ import java.util.List;
 public class PlaceFragment extends BaseFragment {
     private String mPlaceId;
     private Place currentPlace;
+    private double currentPrice = 0.0; // [MỚI] Biến lưu giá tiền thực tế
+
     private PhotoAdapter photoAdapter;
     private PlaceRepository placeRepository;
     private FavoriteRepository favoriteRepository;
     private ReviewRepository reviewRepository;
+    private PlaceStatusRepository placeStatusRepository; // [MỚI] Khai báo Repo
 
     private View layoutContent, layoutNoPhotos;
     private TextView tvTitle, tvLocation, tvDescription, tvPrice, tvPriceLabel, tvCategory, tvRating;
@@ -71,6 +76,7 @@ public class PlaceFragment extends BaseFragment {
         placeRepository = new PlaceRepository();
         favoriteRepository = new FavoriteRepository();
         reviewRepository = new ReviewRepository();
+        placeStatusRepository = new PlaceStatusRepository(); // [MỚI] Khởi tạo
     }
 
     @Override
@@ -85,10 +91,12 @@ public class PlaceFragment extends BaseFragment {
         if (mPlaceId != null) {
             loadPlaceDetails(mPlaceId);
             loadPlaceRating(mPlaceId);
+            loadPlaceStatus(mPlaceId); // [MỚI] Gọi hàm lấy giá tiền
         }
     }
 
     private void initViews(View view) {
+        // ... (Giữ nguyên phần ánh xạ view như code cũ)
         layoutContent = view.findViewById(R.id.layout_content);
         layoutNoPhotos = view.findViewById(R.id.layout_no_photos);
         tvTitle = view.findViewById(R.id.tv_title);
@@ -115,7 +123,6 @@ public class PlaceFragment extends BaseFragment {
         photoAdapter = new PhotoAdapter(pos -> navigateToBooking(1));
         rvPhotos.setAdapter(photoAdapter);
 
-        // Click vào tiêu đề ảnh hoặc nút xem tất cả -> Chuyển sang Photo Tab (index 1)
         View photoHeader = view.findViewById(R.id.layout_photo_header);
         photoHeader.setOnClickListener(v -> navigateToBooking(1));
 
@@ -144,6 +151,44 @@ public class PlaceFragment extends BaseFragment {
         });
     }
 
+    // [MỚI] Hàm lấy thông tin Status (Giá tiền)
+    private void loadPlaceStatus(String placeId) {
+        placeStatusRepository.getStatusByPlaceId(placeId, new DataCallback<PlaceStatus>() {
+            @Override
+            public void onSuccess(PlaceStatus status) {
+                if (isAdded() && status != null) {
+                    currentPrice = status.price; // Lưu giá thực tế
+                    updatePriceUI(currentPlace != null ? currentPlace.category : "", currentPrice);
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                // Nếu lỗi (chưa có status), để giá mặc định là 0
+                currentPrice = 0;
+            }
+        });
+    }
+
+    // [MỚI] Tách logic hiển thị giá ra hàm riêng để dùng chung
+    private void updatePriceUI(String category, double price) {
+        List<String> HOTEL_TYPES = Arrays.asList("hotel", "motel", "resort", "guest_house", "hostel");
+        String cat = (category != null) ? category.toLowerCase() : "";
+
+        if (HOTEL_TYPES.contains(cat)) {
+            tvPriceLabel.setText("Giá phòng");
+            String priceStr = price == 0 ? "Liên hệ" : String.format("%,.0f đ", price);
+            tvPrice.setText(priceStr + "/Ngày");
+        } else {
+            if (cat.equals("restaurant") || cat.equals("cafe")) {
+                tvPriceLabel.setText("Giá trung bình");
+            } else {
+                tvPriceLabel.setText("Vé vào cửa");
+            }
+            tvPrice.setText(price == 0 ? "Miễn phí" : String.format("%,.0f đ", price));
+        }
+    }
+
     private void loadPlaceDetails(String id) {
         showLoading();
         placeRepository.getPlaceById(id, new DataCallback<Place>() {
@@ -154,9 +199,36 @@ public class PlaceFragment extends BaseFragment {
                 currentPlace = place;
                 displayData(place);
                 checkFavoriteStatus();
+
+                // Gọi cập nhật giá lần nữa (phòng trường hợp API Status chạy nhanh hơn API Place)
+                updatePriceUI(place.category, currentPrice);
             }
             @Override public void onError(String msg) { hideLoading(); showError(msg); }
         });
+    }
+
+    private void displayData(Place place) {
+        tvTitle.setText(place.name);
+        tvLocation.setText(place.address);
+        tvDescription.setText(place.description);
+        tvCategory.setText(CategoryUtils.getLabel(place.category));
+        Glide.with(this).load(place.imageUrl).placeholder(R.drawable.placeholder_image).into(imgHeader);
+
+        // Gọi hàm update giá (lúc này giá có thể vẫn là 0 nếu API status chưa xong)
+        updatePriceUI(place.category, currentPrice);
+
+        List<String> images = (place.imgSet != null) ? place.imgSet : new ArrayList<>();
+        if (images.isEmpty()) {
+            layoutNoPhotos.setVisibility(View.VISIBLE);
+            rvPhotos.setVisibility(View.GONE);
+        } else {
+            layoutNoPhotos.setVisibility(View.GONE);
+            rvPhotos.setVisibility(View.VISIBLE);
+            photoAdapter.setData(images);
+        }
+
+        String category = (place.category != null) ? place.category.toLowerCase() : "";
+        btnAction.setText(BOOKING_LABEL_CATEGORIES.contains(category) ? "Đặt ngay" : "Thông tin");
     }
 
     private void loadPlaceRating(String id) {
@@ -182,7 +254,7 @@ public class PlaceFragment extends BaseFragment {
             if (ratingHearts[i] != null) {
                 if (rating >= i + 1) {
                     ratingHearts[i].setImageResource(R.drawable.ic_heart_filled);
-                    ratingHearts[i].setColorFilter(Color.parseColor("#FFC107")); // Vàng
+                    ratingHearts[i].setColorFilter(Color.parseColor("#FFC107"));
                     ratingHearts[i].setAlpha(1.0f);
                 } else if (rating > i && rating < i + 1) {
                     ratingHearts[i].setImageResource(R.drawable.ic_heart_filled);
@@ -190,47 +262,11 @@ public class PlaceFragment extends BaseFragment {
                     ratingHearts[i].setAlpha(0.5f);
                 } else {
                     ratingHearts[i].setImageResource(R.drawable.ic_heart);
-                    ratingHearts[i].setColorFilter(Color.parseColor("#D3D3D3")); // Xám
+                    ratingHearts[i].setColorFilter(Color.parseColor("#D3D3D3"));
                     ratingHearts[i].setAlpha(1.0f);
                 }
             }
         }
-    }
-
-    private void displayData(Place place) {
-        tvTitle.setText(place.name);
-        tvLocation.setText(place.address);
-        tvDescription.setText(place.description);
-        tvCategory.setText(CategoryUtils.getLabel(place.category));
-        Glide.with(this).load(place.imageUrl).placeholder(R.drawable.placeholder_image).into(imgHeader);
-
-        List<String> HOTEL_TYPES = Arrays.asList("hotel", "motel", "resort", "guest_house", "hostel");
-        String category = (place.category != null) ? place.category.toLowerCase() : "";
-
-        if (HOTEL_TYPES.contains(category)) {
-            tvPriceLabel.setText("Giá phòng");
-            String priceStr = place.price == 0 ? "Liên hệ" : String.format("%,.0f đ", place.price);
-            tvPrice.setText(priceStr + "/Ngày");
-        } else {
-            if (category.equals("restaurant") || category.equals("cafe")) {
-                tvPriceLabel.setText("Giá trung bình");
-            } else {
-                tvPriceLabel.setText("Vé vào cửa");
-            }
-            tvPrice.setText(place.price == 0 ? "Miễn phí" : String.format("%,.0f đ", place.price));
-        }
-
-        List<String> images = (place.imgSet != null) ? place.imgSet : new ArrayList<>();
-        if (images.isEmpty()) {
-            layoutNoPhotos.setVisibility(View.VISIBLE);
-            rvPhotos.setVisibility(View.GONE);
-        } else {
-            layoutNoPhotos.setVisibility(View.GONE);
-            rvPhotos.setVisibility(View.VISIBLE);
-            photoAdapter.setData(images);
-        }
-
-        btnAction.setText(BOOKING_LABEL_CATEGORIES.contains(category) ? "Đặt ngay" : "Thông tin");
     }
 
     private void toggleFavorite() {
@@ -263,7 +299,9 @@ public class PlaceFragment extends BaseFragment {
         if (currentPlace == null) return;
         ArrayList<String> images = new ArrayList<>();
         if (currentPlace.imgSet != null) images.addAll(currentPlace.imgSet);
+
+        // Truyền giá tiền lấy từ API Status sang màn hình Booking
         replaceFragment(BookingFragment.newInstance(currentPlace.id, currentPlace.name, currentPlace.address,
-                currentPlace.imageUrl, (int)currentPlace.price, currentPlace.category, images, tabIndex));
+                currentPlace.imageUrl, (int)currentPrice, currentPlace.category, images, tabIndex));
     }
 }

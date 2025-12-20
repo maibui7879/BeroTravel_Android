@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog; // [MỚI]
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,16 +22,19 @@ import com.example.berotravel20.adapters.MapPlaceAdapter;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.local.TokenManager;
 import com.example.berotravel20.data.model.Favorite.FavoriteResponse;
+import com.example.berotravel20.data.model.Journey.Journey;
 import com.example.berotravel20.data.model.Place.Place;
+import com.example.berotravel20.data.model.Stats.UserStatsResponse;
 import com.example.berotravel20.data.model.User.User;
 import com.example.berotravel20.data.repository.FavoriteRepository;
+import com.example.berotravel20.data.repository.JourneyRepository;
+import com.example.berotravel20.data.repository.UserStatsRepository;
 import com.example.berotravel20.ui.auth.AuthActivity;
 import com.example.berotravel20.ui.common.BaseActivity;
 import com.example.berotravel20.ui.common.BaseFragment;
 import com.example.berotravel20.ui.common.RequestLoginDialog;
 import com.example.berotravel20.ui.main.place.PlaceFragment;
 import com.example.berotravel20.ui.map.MapActivity;
-import com.example.berotravel20.utils.ToastUtils;
 import com.example.berotravel20.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
@@ -39,16 +43,18 @@ import java.util.List;
 public class AccountFragment extends BaseFragment implements RequestLoginDialog.RequestLoginListener {
 
     private ProfileViewModel viewModel;
-    private FavoriteRepository favoriteRepository;
+    private User mCurrentUser; // [MỚI] Biến lưu user hiện tại để lấy URL ảnh khi click
 
-    // UI Components
+    private FavoriteRepository favoriteRepository;
+    private UserStatsRepository userStatsRepository;
+    private JourneyRepository journeyRepository;
+
     private TextView tvUserName, tvUserEmail, tvUserBio, tvFavoriteCount, tvReviewCount, tvTripCount, btnEditProfile;
     private ImageView ivAvatar, ivCover;
     private Button btnLogout;
     private RecyclerView rvFavorites;
     private View layoutEmptyState;
 
-    // Sử dụng Adapter chung để đồng bộ giao diện
     private MapPlaceAdapter placeAdapter;
 
     @Nullable
@@ -60,37 +66,35 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        favoriteRepository = new FavoriteRepository();
 
-        // 1. Kiểm tra trạng thái đăng nhập
+        favoriteRepository = new FavoriteRepository();
+        userStatsRepository = new UserStatsRepository();
+        journeyRepository = new JourneyRepository(requireContext());
+
         if (!isUserLoggedIn()) {
             showLoginRequestDialog();
             return;
         }
 
-        // 2. Khởi tạo UI
         initViews(view);
-
-        // 3. Thiết lập danh sách RecyclerView
         setupRecyclerView();
-
-        // 4. Kết nối dữ liệu User qua ViewModel
         setupViewModel();
-
-        // 5. Tải dữ liệu địa điểm yêu thích
-        loadFavoriteData();
-
-        // 6. Thiết lập các sự kiện click
+        refreshData();
         setupEvents();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Cập nhật lại danh sách mỗi khi quay lại tab Profile
         if (isUserLoggedIn()) {
-            loadFavoriteData();
+            refreshData();
         }
+    }
+
+    private void refreshData() {
+        loadFavoriteData();
+        loadUserStats();
+        loadTripCount();
     }
 
     private void initViews(View view) {
@@ -106,22 +110,19 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         tvFavoriteCount = view.findViewById(R.id.tvFavoriteCount);
 
         rvFavorites = view.findViewById(R.id.rvFavorites);
-        layoutEmptyState = view.findViewById(R.id.layout_empty_state); // Layout hiện khi danh sách trống
+        layoutEmptyState = view.findViewById(R.id.layout_empty_state);
         btnLogout = view.findViewById(R.id.btnLogout);
     }
 
     private void setupRecyclerView() {
-        // Khởi tạo adapter với listener xử lý 3 hành động chính
         placeAdapter = new MapPlaceAdapter(getContext(), new MapPlaceAdapter.OnItemClickListener() {
             @Override
             public void onFavoriteClick(Place place) {
-                // Xử lý bỏ yêu thích trực tiếp
                 handleFavoriteToggle(place);
             }
 
             @Override
             public void onItemClick(Place place) {
-                // Điều hướng sang trang chi tiết địa điểm
                 if (getActivity() instanceof BaseActivity) {
                     ((BaseActivity) getActivity()).navigateToDetail(PlaceFragment.newInstance(place.id));
                 }
@@ -129,7 +130,6 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
 
             @Override
             public void onDirectionClick(Place place) {
-                // Mở MapActivity ở chế độ chỉ đường từ vị trí hiện tại đến địa điểm này
                 Intent intent = new Intent(requireContext(), MapActivity.class);
                 intent.putExtra("ACTION_TYPE", "DIRECT_TO_PLACE");
                 intent.putExtra("TARGET_LAT", place.latitude);
@@ -148,38 +148,52 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
             @Override
             public void onSuccess(List<Place> places) {
                 if (isAdded() && places != null) {
-                    // Cập nhật danh sách hiển thị
                     placeAdapter.setData(places);
-
-                    // Logic quan trọng: Đánh dấu đỏ cho tất cả icon trái tim trong danh sách này
                     List<String> ids = new ArrayList<>();
                     for (Place p : places) ids.add(p.id);
                     placeAdapter.setFavoriteIds(ids);
-
-                    // Cập nhật số lượng trên header
                     tvFavoriteCount.setText(String.valueOf(places.size()));
-
-                    // Hiển thị Empty State nếu không có dữ liệu
                     if (layoutEmptyState != null) {
                         layoutEmptyState.setVisibility(places.isEmpty() ? View.VISIBLE : View.GONE);
                     }
                 }
             }
-
             @Override public void onError(String message) { }
         });
     }
 
+    private void loadUserStats() {
+        userStatsRepository.getMyStats(new DataCallback<UserStatsResponse>() {
+            @Override
+            public void onSuccess(UserStatsResponse data) {
+                if (isAdded() && data != null && data.reviewsCreated != null) {
+                    tvReviewCount.setText(String.valueOf(data.reviewsCreated.count));
+                }
+            }
+            @Override public void onError(String message) {}
+        });
+    }
+
+    private void loadTripCount() {
+        journeyRepository.getJourneys(new DataCallback<List<Journey>>() {
+            @Override
+            public void onSuccess(List<Journey> data) {
+                if (isAdded()) {
+                    int count = (data != null) ? data.size() : 0;
+                    tvTripCount.setText(String.valueOf(count));
+                }
+            }
+            @Override public void onError(String message) {}
+        });
+    }
+
     private void handleFavoriteToggle(Place place) {
-        // Gọi API toggle. Ở màn hình Profile, hành động này tương đương với "Bỏ yêu thích"
         favoriteRepository.toggleFavorite(place.id, new DataCallback<FavoriteResponse>() {
             @Override
             public void onSuccess(FavoriteResponse data) {
-                // Reload lại dữ liệu để item bị xóa khỏi danh sách ngay lập tức
                 loadFavoriteData();
                 showSuccess("Đã xóa khỏi danh sách yêu thích");
             }
-
             @Override
             public void onError(String message) {
                 showError(message);
@@ -189,27 +203,62 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
-
         viewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
+                mCurrentUser = user; // [MỚI] Lưu user vào biến toàn cục
+
                 tvUserName.setText(user.name);
                 if (user.email != null) tvUserEmail.setText(user.email);
-                tvUserBio.setText((user.bio != null && !user.bio.isEmpty()) ? user.bio : "Khám phá thế giới cùng BeroTravel.");
-
-                // Load ảnh Avatar và Cover
+                tvUserBio.setText((user.bio != null && !user.bio.isEmpty()) ? user.bio : "Thành viên BeroTravel.");
                 Glide.with(this).load(user.avatarUrl).placeholder(R.drawable.account_icon).circleCrop().into(ivAvatar);
                 if (user.coverUrl != null) {
-                    Glide.with(this).load(user.coverUrl).placeholder(R.drawable.background).centerCrop().into(ivCover);
+                    Glide.with(this).load(user.coverUrl).placeholder(R.drawable.bg_top).centerCrop().into(ivCover);
                 }
             }
         });
-
         viewModel.loadUserProfile();
     }
 
     private void setupEvents() {
         btnLogout.setOnClickListener(v -> handleLogout());
         btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
+
+        // [MỚI] Thêm sự kiện click vào Avatar để xem full
+        ivAvatar.setOnClickListener(v -> {
+            if (mCurrentUser != null && mCurrentUser.avatarUrl != null && !mCurrentUser.avatarUrl.isEmpty()) {
+                showFullImage(mCurrentUser.avatarUrl);
+            }
+        });
+
+        // [MỚI] Thêm sự kiện click vào Ảnh bìa (Cover) để xem full (nếu muốn)
+        ivCover.setOnClickListener(v -> {
+            if (mCurrentUser != null && mCurrentUser.coverUrl != null && !mCurrentUser.coverUrl.isEmpty()) {
+                showFullImage(mCurrentUser.coverUrl);
+            }
+        });
+    }
+
+    // [MỚI] Hàm hiển thị ảnh Fullscreen (Tái sử dụng layout dialog_view_photo.xml)
+    private void showFullImage(String url) {
+        if (getContext() == null) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        View view = getLayoutInflater().inflate(R.layout.dialog_view_photo, null);
+        builder.setView(view);
+
+        ImageView ivFull = view.findViewById(R.id.iv_full_photo);
+        View btnClose = view.findViewById(R.id.btn_close_photo);
+
+        Glide.with(this)
+                .load(url)
+                .fitCenter()
+                .placeholder(R.drawable.placeholder_image)
+                .into(ivFull);
+
+        AlertDialog dialog = builder.create();
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        ivFull.setOnClickListener(v -> dialog.dismiss()); // Bấm vào ảnh cũng đóng
+        dialog.show();
     }
 
     private void handleLogout() {
@@ -223,13 +272,11 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
     private void showEditProfileDialog() {
         User currentUser = viewModel.getUser().getValue();
         if (currentUser == null) return;
-
-        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, dob, avatarBase64, coverBase64) -> {
-            String finalAvatar = (avatarBase64 != null) ? avatarBase64 : currentUser.avatarUrl;
-            String finalCover = (coverBase64 != null) ? coverBase64 : currentUser.coverUrl;
+        EditProfileBottomSheet bottomSheet = new EditProfileBottomSheet(currentUser, (name, bio, dob, avatarUrl, coverUrl) -> {
+            String finalAvatar = (avatarUrl != null) ? avatarUrl : currentUser.avatarUrl;
+            String finalCover = (coverUrl != null) ? coverUrl : currentUser.coverUrl;
             viewModel.updateProfile(name, bio, dob, finalAvatar, finalCover);
         });
-
         bottomSheet.show(getParentFragmentManager(), "EditProfileBottomSheet");
     }
 
@@ -243,5 +290,7 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         startActivity(new Intent(requireContext(), AuthActivity.class));
     }
 
-    @Override public void onCancelClick() { }
+    @Override public void onCancelClick() {
+
+    }
 }

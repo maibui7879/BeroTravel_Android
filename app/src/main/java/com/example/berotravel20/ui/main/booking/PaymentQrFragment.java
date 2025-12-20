@@ -49,7 +49,7 @@ public class PaymentQrFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Bắt đầu đếm ngược 3 giây
-        handler.postDelayed(payTask, 3000);
+        handler.postDelayed(payTask, 5000);
     }
 
     private void executePayment() {
