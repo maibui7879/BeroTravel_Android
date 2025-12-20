@@ -26,6 +26,8 @@ public interface UserApiService {
             @Part MultipartBody.Part avatar, // File ảnh đại diện
             @Part MultipartBody.Part cover   // File ảnh bìa
     );
+    @PUT("/api/users/profile")
+    Call<User> changePassword(@Body User userWithNewPassword);
 
     // Notification
     @GET("/api/notifications")

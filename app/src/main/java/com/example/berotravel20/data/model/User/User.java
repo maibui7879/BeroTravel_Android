@@ -11,6 +11,9 @@ public class User {
     public String password;
     public String dob;
     public String bio;
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     // Class rút gọn dùng trong Review/Vote
     public static class Brief {

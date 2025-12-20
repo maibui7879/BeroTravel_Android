@@ -93,20 +93,41 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvUserEmail" />
-            <TextView
-                android:id="@+id/btnEditProfile"
+
+            <LinearLayout
+                android:id="@+id/layoutButtons"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_white_rounded"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="8dp"
-                android:text="Chỉnh sửa hồ sơ"
-                android:textColor="#336749"
-                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvUserBio" />
+                app:layout_constraintTop_toBottomOf="@id/tvUserBio">
+
+                <TextView
+                    android:id="@+id/btnEditProfile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_white_rounded"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="Sửa hồ sơ"
+                    android:textColor="#336749"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnChangePassword"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_white_rounded"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="Đổi mật khẩu"
+                    android:textColor="#336749"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/layoutStats"
@@ -119,31 +140,29 @@
                 android:orientation="horizontal"
                 android:paddingVertical="16dp"
                 android:weightSum="3"
-                app:layout_constraintTop_toBottomOf="@id/btnEditProfile">
+                app:layout_constraintTop_toBottomOf="@id/layoutButtons"> <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/tvReviewCount"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:text="0"
+                    android:textColor="#333333"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvReviewCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="#333333"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Đánh giá"
-                        android:textColor="#888888"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đánh giá"
+                    android:textColor="#888888"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"

@@ -47,33 +47,36 @@ public class SettingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ các nút chức năng
+        // 1. Ánh xạ các nút chức năng trong fragment_setting
         View btnNotification = view.findViewById(R.id.btn_notification);
         View btnChangePassword = view.findViewById(R.id.btn_change_password);
         Button btnLogout = view.findViewById(R.id.btn_logout);
 
         // 2. Click mở Activity Thông báo
-        btnNotification.setOnClickListener(v -> {
-            startActivity(new Intent(getActivity(), NotificationActivity.class));
-        });
+        if (btnNotification != null) {
+            btnNotification.setOnClickListener(v -> {
+                startActivity(new Intent(getActivity(), NotificationActivity.class));
+            });
+        }
 
         // 3. Click mở Dialog Đổi mật khẩu
-        btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+        if (btnChangePassword != null) {
+            btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+        }
 
         // 4. Setup Theme (Sáng/Tối)
         setupThemeSwitch(view);
 
         // 5. Click Đăng xuất
-        btnLogout.setOnClickListener(v -> logout());
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> logout());
+        }
     }
 
-    // --- LOGIC THEME (SÁNG/TỐI) ---
     private void setupThemeSwitch(View view) {
-        // Ánh xạ đúng ID switchTheme từ file XML của bạn
         SwitchCompat switchTheme = view.findViewById(R.id.switchTheme);
 
         if (switchTheme != null) {
-            // Kiểm tra SharedPreferences để set trạng thái nút Switch ngay khi mở Fragment
             SharedPreferences prefs = getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
             boolean isDarkMode = prefs.getBoolean("isDarkMode", false);
             switchTheme.setChecked(isDarkMode);
@@ -86,8 +89,6 @@ public class SettingFragment extends Fragment {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                     Toast.makeText(getContext(), "Đã bật chế độ Sáng", Toast.LENGTH_SHORT).show();
                 }
-
-                // Lưu lại lựa chọn vào máy
                 prefs.edit().putBoolean("isDarkMode", isChecked).apply();
             });
         }
@@ -106,15 +107,34 @@ public class SettingFragment extends Fragment {
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
 
-        EditText edtNewPass = dialog.findViewById(R.id.edt_new_pass);
-        Button btnSave = dialog.findViewById(R.id.btn_save_pass);
+        // Ánh xạ lại đúng ID từ file XML dialog_change_password bạn vừa gửi
+        EditText etOldPassword = dialog.findViewById(R.id.etOldPassword);
+        EditText etNewPassword = dialog.findViewById(R.id.etNewPassword);
+        EditText etConfirmPassword = dialog.findViewById(R.id.etConfirmPassword);
+        Button btnSubmit = dialog.findViewById(R.id.btnSubmit);
 
-        btnSave.setOnClickListener(v -> {
-            String newPass = edtNewPass.getText().toString().trim();
-            if (newPass.length() < 6) {
-                Toast.makeText(getContext(), "Mật khẩu phải từ 6 ký tự trở lên", Toast.LENGTH_SHORT).show();
+        btnSubmit.setOnClickListener(v -> {
+            String oldPass = etOldPassword.getText().toString().trim();
+            String newPass = etNewPassword.getText().toString().trim();
+            String confirmPass = etConfirmPassword.getText().toString().trim();
+
+            // Validate logic
+            if (oldPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
+                Toast.makeText(getContext(), "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            if (newPass.length() < 6) {
+                Toast.makeText(getContext(), "Mật khẩu mới phải từ 6 ký tự trở lên", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPass.equals(confirmPass)) {
+                Toast.makeText(getContext(), "Xác nhận mật khẩu không khớp", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Gọi API lưu mật khẩu mới
             changePasswordApi(newPass, dialog);
         });
 
@@ -123,9 +143,11 @@ public class SettingFragment extends Fragment {
 
     private void changePasswordApi(String newPass, Dialog dialog) {
         User userUpdate = new User();
-        userUpdate.password = newPass;
+        userUpdate.setPassword(newPass); // Nhớ thêm hàm setPassword vào file User.java nhé
 
-        RetrofitClient.getInstance(getContext()).getUserApi().updateProfile(userUpdate)
+        // Sử dụng getRetrofit().create(...) giống như các repo khác của bạn
+        RetrofitClient.getInstance(getContext()).getRetrofit().create(com.example.berotravel20.data.api.UserApiService.class)
+                .updateProfile(userUpdate)
                 .enqueue(new Callback<User>() {
                     @Override
                     public void onResponse(Call<User> call, Response<User> response) {
@@ -144,14 +166,9 @@ public class SettingFragment extends Fragment {
                 });
     }
 
-    // --- LOGIC ĐĂNG XUẤT ---
     private void logout() {
         if (getContext() == null) return;
-
-        // Xóa thông tin đăng nhập (nhưng giữ lại cài đặt Theme nếu muốn)
-        SharedPreferences prefs = getContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        prefs.edit().clear().apply();
-
+        com.example.berotravel20.data.local.TokenManager.getInstance(getContext()).clearSession();
         Intent intent = new Intent(getActivity(), AuthActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

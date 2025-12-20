@@ -6,8 +6,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.adapters.MapPlaceAdapter;
+import com.example.berotravel20.data.api.UserApiService;
 import com.example.berotravel20.data.common.DataCallback;
 import com.example.berotravel20.data.local.TokenManager;
 import com.example.berotravel20.data.model.Favorite.FavoriteResponse;
@@ -26,6 +29,7 @@ import com.example.berotravel20.data.model.Journey.Journey;
 import com.example.berotravel20.data.model.Place.Place;
 import com.example.berotravel20.data.model.Stats.UserStatsResponse;
 import com.example.berotravel20.data.model.User.User;
+import com.example.berotravel20.data.remote.RetrofitClient;
 import com.example.berotravel20.data.repository.FavoriteRepository;
 import com.example.berotravel20.data.repository.JourneyRepository;
 import com.example.berotravel20.data.repository.UserStatsRepository;
@@ -112,6 +116,79 @@ public class AccountFragment extends BaseFragment implements RequestLoginDialog.
         rvFavorites = view.findViewById(R.id.rvFavorites);
         layoutEmptyState = view.findViewById(R.id.layout_empty_state);
         btnLogout = view.findViewById(R.id.btnLogout);
+
+        TextView btnChangePassword = view.findViewById(R.id.btnChangePassword);
+        btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+    }
+
+    private void showChangePasswordDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
+        builder.setView(dialogView);
+
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        EditText etOld = dialogView.findViewById(R.id.etOldPassword);
+        EditText etNew = dialogView.findViewById(R.id.etNewPassword);
+        EditText etConfirm = dialogView.findViewById(R.id.etConfirmPassword);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        btnSubmit.setOnClickListener(v -> {
+            String oldP = etOld.getText().toString().trim();
+            String newP = etNew.getText().toString().trim();
+            String confirmP = etConfirm.getText().toString().trim();
+
+            // 1. Kiểm tra trống các ô
+            if (oldP.isEmpty() || newP.isEmpty() || confirmP.isEmpty()) {
+                Toast.makeText(getContext(), "Vui lòng nhập đầy đủ 3 ô mật khẩu", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 2. Kiểm tra mật khẩu mới khác mật khẩu cũ
+            if (oldP.equals(newP)) {
+                Toast.makeText(getContext(), "Mật khẩu mới phải khác mật khẩu hiện tại", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 3. Kiểm tra 2 ô mật khẩu mới phải giống nhau
+            if (!newP.equals(confirmP)) {
+                Toast.makeText(getContext(), "Mật khẩu xác nhận không trùng khớp", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 4. Kiểm tra độ dài tối thiểu
+            if (newP.length() < 6) {
+                Toast.makeText(getContext(), "Mật khẩu mới phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // TIẾN HÀNH GỌI API (Dùng object User để gửi password mới lên Backend JS)
+            com.example.berotravel20.data.model.User.User userUpdate = new com.example.berotravel20.data.model.User.User();
+            userUpdate.setPassword(newP);
+
+            UserApiService apiService = RetrofitClient.getInstance(getContext()).getRetrofit().create(UserApiService.class);
+            apiService.changePassword(userUpdate).enqueue(new retrofit2.Callback<com.example.berotravel20.data.model.User.User>() {
+                @Override
+                public void onResponse(retrofit2.Call<com.example.berotravel20.data.model.User.User> call, retrofit2.Response<com.example.berotravel20.data.model.User.User> response) {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(getContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(getContext(), "Mật khẩu cũ không chính xác hoặc lỗi hệ thống", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(retrofit2.Call<com.example.berotravel20.data.model.User.User> call, Throwable t) {
+                    Toast.makeText(getContext(), "Lỗi kết nối Server", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void setupRecyclerView() {
