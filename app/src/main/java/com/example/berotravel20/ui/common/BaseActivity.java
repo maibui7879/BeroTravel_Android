@@ -60,7 +60,11 @@ public class BaseActivity extends AppCompatActivity {
     private boolean handleIntent(Intent intent) {
         if (intent != null && intent.hasExtra("NAVIGATE_TO")) {
             String navigateTo = intent.getStringExtra("NAVIGATE_TO");
-
+            if ("HOME".equals(navigateTo)) {
+                setSelected(navHome); // Đổi màu icon Home thành Teal
+                replaceFragment(new HomeFragment());
+                return true;
+            }
             // Logic điều hướng về Booking History
             if ("BOOKING_HISTORY".equals(navigateTo)) {
                 setSelected(navBooking);

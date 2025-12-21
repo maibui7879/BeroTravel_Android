@@ -60,8 +60,9 @@ public class BookingSuccessFragment extends BaseFragment {
         view.findViewById(R.id.btn_back_to_home).setOnClickListener(v -> {
             if (getActivity() != null) {
                 Intent intent = new Intent(getActivity(), BaseActivity.class);
-                // Xóa các fragment cũ và đưa người dùng về Home
+
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
                 intent.putExtra("NAVIGATE_TO", "HOME");
                 startActivity(intent);
             }

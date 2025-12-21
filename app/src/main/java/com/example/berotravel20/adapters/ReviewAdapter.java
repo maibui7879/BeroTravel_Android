@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.berotravel20.R;
 import com.example.berotravel20.data.model.Review.Review;
+import com.example.berotravel20.utils.TimeUtils;
+
 import java.util.List;
 
 public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder> {
@@ -36,6 +38,8 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
     public void onBindViewHolder(@NonNull ReviewViewHolder holder, int position) {
         Review review = reviews.get(position);
         holder.bind(review);
+        String timeAgo = TimeUtils.getTimeAgo(review.createdAt);
+        holder.tvDate.setText(timeAgo);
     }
 
     @Override
@@ -45,12 +49,13 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
 
     static class ReviewViewHolder extends RecyclerView.ViewHolder {
         ImageView imgAvatar;
-        TextView tvName, tvComment;
+        TextView tvName, tvComment, tvDate;
         RatingBar ratingBar;
 
         public ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
             // ÁNH XẠ CÁC VIEW TỪ FILE item_review.xml
+            tvDate = itemView.findViewById(R.id.tv_date);
             imgAvatar = itemView.findViewById(R.id.img_avatar);
             tvName = itemView.findViewById(R.id.tv_username);
             tvComment = itemView.findViewById(R.id.tv_comment);
